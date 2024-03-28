@@ -1,4 +1,4 @@
-Reinforcement learning basic algorithm implementation
+# Reinforcement learning basic algorithm implementation
 
 run 'python test.py' to train and test the algorithm.
 
