@@ -27,5 +27,5 @@ if __name__ == '__main__':
     # test(QLearning, 'Taxi-v3')
     # test(Sarsa, 'Taxi-v3')
     # test(DQN, 'CartPole-v1')
-    test(DDQN, 'CartPole-v1')
-    # test(DuelingDQN, 'CartPole-v1')
+    # test(DDQN, 'CartPole-v1')
+    test(DuelingDQN, 'CartPole-v1')

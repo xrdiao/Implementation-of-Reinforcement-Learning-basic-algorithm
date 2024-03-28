@@ -21,7 +21,9 @@ class QNetwork(nn.Module):
         x = F.relu(self.fc1(x))
         advantages = self.advantage(x)
         values = self.value(x)
-        return values + (advantages - torch.mean(advantages))
+
+        mean_advantage = torch.mean(advantages) if advantages.dim() < 2 else torch.mean(advantages, dim=1, keepdim=True)
+        return values + (advantages - mean_advantage)
 
 
 class DuelingDQN(DQN):
