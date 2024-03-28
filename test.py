@@ -3,6 +3,7 @@ from Q_learning import QLearning
 from Sarsa import Sarsa
 from DQN import DQN
 from DDQN import DDQN
+from DuelingDQN import DuelingDQN
 
 
 def test(learn_method, env_name):
@@ -27,3 +28,4 @@ if __name__ == '__main__':
     # test(Sarsa, 'Taxi-v3')
     # test(DQN, 'CartPole-v1')
     test(DDQN, 'CartPole-v1')
+    # test(DuelingDQN, 'CartPole-v1')

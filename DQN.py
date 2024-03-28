@@ -48,6 +48,10 @@ class DQN:
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.eval.to(self.device)
         self.target.to(self.device)
+        self.name = 'DQN'
+
+    def get_path(self):
+        return 'models/' + self.name + '.pth'
 
     def learn(self, state_, action_, reward_, next_state_, dones_):
         action_ = torch.tensor(action_, dtype=torch.long).view(-1, 1).to(self.device)
@@ -72,8 +76,8 @@ class DQN:
         return self.env.action_space.sample()
 
     def load_model(self):
-        self.eval.load_state_dict(torch.load("model/dqn/dqn.pth"))
-        self.target.load_state_dict(torch.load("model/dqn/dqn.pth"))
+        self.eval.load_state_dict(torch.load(self.get_path()))
+        self.target.load_state_dict(torch.load(self.get_path()))
 
     def train(self, episodes_, pretrain=False):
         if pretrain:
@@ -109,7 +113,7 @@ class DQN:
                 print("Episode {}, epsilon: {}, loss: {}, reward:{}".format(episode, self.epsilon, loss_sum,
                                                                             sum(self.reward_buffer) / len(
                                                                                 self.reward_buffer)))
-                torch.save(self.eval.state_dict(), 'model/dqn/dqn_{}.pth'.format(int(episode / 1000)))
+                torch.save(self.eval.state_dict(), self.get_path())
                 self.reward_buffer.clear()
 
     def plot_reward(self):

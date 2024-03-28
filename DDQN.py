@@ -1,8 +1,6 @@
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
-from relay_buffer import ReplayBuffer
 from DQN import DQN
 import torch
 
@@ -10,6 +8,7 @@ import torch
 class DDQN(DQN):
     def __init__(self, env_, gamma_, alpha_, explosion_step_, epsilon_):
         super(DDQN, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
+        self.name = 'DDQN'
         self.time2switch = 0
         self.switch = False
 
