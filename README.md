@@ -1,6 +1,6 @@
 # Reinforcement learning basic algorithm implementation
 
-This document include **Q_learning, Sarsa, DQN, DDQN, Dueling DQN,  PG, VPG, TRPO, PPO**. Let's 
+This document include **Q_learning, Sarsa, DQN, DDQN, Dueling DQN,  PG, VPG, TRPO, PPO**. Let's enjoy ourselves.
 
 run `python test.py` to train and test the algorithm. 
 
