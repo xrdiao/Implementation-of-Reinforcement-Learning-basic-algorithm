@@ -12,7 +12,6 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         self.fc1 = nn.Linear(state_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, action_size)
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -23,14 +22,14 @@ class PolicyGradient(DQN):
     '''
     Policy Gradient，从结果看，确实容易局部收敛和过冲，学习率难以控制
     '''
+
     def __init__(self, env_, gamma_, alpha_, explosion_step_, epsilon_):
         super(PolicyGradient, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
 
         # PG与DQN的区别在于任务的目标，DQN是逼近最优价值函数，PG是找到最多的奖励，其实可以不添加这三行，但为了可读性，还是加上了
-        self.actor = Actor(self.action_size, self.state_size, 16)
-        self.optimizer = optim.Adam(self.actor.parameters(), lr=0.001)  # 这里加一个weight_decay直接就不收敛了，是因为参数本来就不多。
+        self.actor = Actor(self.action_size, self.state_size, self.hidden_size)
+        self.optimizer_actor = optim.Adam(self.actor.parameters(), lr=0.001)  # 这里加一个weight_decay直接就不收敛了，是因为参数本来就不多。
         self.actor.to(self.device)
-        self.memory = deque(maxlen=500)
 
         self.name = 'PG'
 
@@ -52,13 +51,13 @@ class PolicyGradient(DQN):
         loss_sum = 0
 
         # 从PG的伪代码得到的
-        self.optimizer.zero_grad()
+        self.optimizer_actor.zero_grad()
         for t in reversed(range(len(state_))):
-            G = reward_[t] + self.gamma * G
+            G = reward_[len(state_) - 1 - t] + self.gamma * G
             log_prob = torch.log(self.actor(state_).gather(1, action_[t].view(1, -1)))
             loss = - (self.alpha * (self.gamma ** t) * G * log_prob)
             loss.backward()
-        self.optimizer.step()
+        self.optimizer_actor.step()
 
         return loss_sum
 
@@ -86,8 +85,6 @@ class PolicyGradient(DQN):
                     break
 
             # 可以通过memory记录问题，然后用重要性方法转换概率，但这里主要是简要实现，memory留到PPO解决
-            self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * episode)
-
             loss_sum = self.learn(trajectory_dict['states'], trajectory_dict['actions'], trajectory_dict['rewards'],
                                   trajectory_dict['next_states'], trajectory_dict['dones'])
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())

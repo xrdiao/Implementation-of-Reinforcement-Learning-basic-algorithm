@@ -14,6 +14,13 @@ class ReplayBuffer:
     def add(self, state, action, reward, next_state, done):
         self.buffer.append((state, action, reward, next_state, done))
 
+    def add_dict(self, trajectory_dict):
+        self.buffer.append(trajectory_dict)
+
+    def sample_dict(self, batch_size):
+        samples = random.sample(self.buffer, batch_size)
+        return samples
+
     def sample(self, batch_size):
         samples = random.sample(self.buffer, batch_size)
         # *transitions代表取出列表中的值，解压

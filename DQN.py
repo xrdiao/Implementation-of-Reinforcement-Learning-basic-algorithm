@@ -29,10 +29,11 @@ class DQN:
         self.epsilon = epsilon_
         self.state_size = self.env.observation_space.shape[0]
         self.action_size = self.env.action_space.n
+        self.hidden_size = 16
 
         # hidden = 16
-        self.eval = Model(self.action_size, self.state_size,  16)
-        self.target = Model(self.action_size, self.state_size, 16)
+        self.eval = Model(self.action_size, self.state_size,  self.hidden_size)
+        self.target = Model(self.action_size, self.state_size, self.hidden_size)
         self.optimizer = optim.Adam(self.eval.parameters(), lr=0.01)    # 这里加一个weight_decay直接就不收敛了，估计是因为参数本来就不多。
         self.memory = ReplayBuffer(500)
 

@@ -33,8 +33,8 @@ class DuelingDQN(DQN):
         super(DuelingDQN, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
         self.name = 'DuelingDQN'
 
-        # 训练的方法没有问题，如果不收敛，问题应该出在模型或者学习率上，大概率是后者（调参）
-        self.target = QNetwork(self.action_size, self.state_size, 32, 16)
-        self.eval = QNetwork(self.action_size, self.state_size, 32, 16)
+        # 训练的方法没有问题，如果不收敛，问题应该出在模型或者学习率上，大概率是后者（调参），其render结果和DQN的不太一样
+        self.target = QNetwork(self.action_size, self.state_size, self.hidden_size*2, self.hidden_size)
+        self.eval = QNetwork(self.action_size, self.state_size, self.hidden_size*2, self.hidden_size)
         self.optimizer = optim.Adam(self.eval.parameters(), lr=0.001)
 
