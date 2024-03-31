@@ -15,7 +15,8 @@ class Actor(nn.Module):
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
-        return F.softmax(self.fc2(x), dim=1)
+        x = self.fc2(x)
+        return F.softmax(x, dim=1)
 
 
 class PolicyGradient(DQN):
