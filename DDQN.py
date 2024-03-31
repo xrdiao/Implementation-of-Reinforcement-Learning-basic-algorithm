@@ -13,6 +13,7 @@ class DDQN(DQN):
         self.switch = False
 
     def choose_action(self, state_, epsilon_):
+        state_ = torch.tensor(state_, dtype=torch.float).view(1,-1)
         if np.random.uniform(0, 1) > epsilon_:
             if self.switch:
                 return torch.argmax(self.target(state_)).item()
@@ -22,9 +23,7 @@ class DDQN(DQN):
         return self.env.action_space.sample()
 
     def learn(self, state_, action_, reward_, next_state_, dones_):
-        action_ = torch.tensor(action_, dtype=torch.long).view(-1, 1).to(self.device)
-        dones_ = torch.tensor(dones_, dtype=torch.long).view(-1, 1).to(self.device)
-        reward_ = torch.tensor(reward_, dtype=torch.float).view(-1, 1).to(self.device)
+        state_, action_, reward_, next_state_, dones_ = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
 
         if self.switch:
             # Q_target(s,a) = reward(s,a) + gamma * Q_eval(s',argmax(Q_target(s',a'))
@@ -45,6 +44,7 @@ class DDQN(DQN):
         loss.backward()
         optimizer.step()
 
+        # 如果train函数也在这里，可以用episode代替time2switch，本质是找个节点切换两个网络的关系
         if self.time2switch % 200 == 0 and self.time2switch > 0:
             self.switch = not self.switch
 

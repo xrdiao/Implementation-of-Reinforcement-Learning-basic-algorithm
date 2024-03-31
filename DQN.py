@@ -17,7 +17,7 @@ class Model(torch.nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, x):
-        x = torch.tensor(x, dtype=torch.float).to(self.device)
+        # x = torch.tensor(x, dtype=torch.float).to(self.device)
         x = F.relu(self.fc1(x))
         return self.fc2(x)
 
@@ -53,10 +53,16 @@ class DQN:
     def get_path(self):
         return 'models/' + self.name + '.pth'
 
+    def numpy2tensor(self, state_, action_, reward_, next_state_, dones_):
+        action_ = torch.tensor(np.array(action_), dtype=torch.long).view(-1, 1).to(self.device)
+        reward_ = torch.tensor(np.array(reward_), dtype=torch.float).view(-1, 1).to(self.device)
+        dones_ = torch.tensor(np.array(dones_), dtype=torch.long).view(-1, 1).to(self.device)
+        state_ = torch.tensor(np.array(state_), dtype=torch.float).to(self.device)
+        next_state_ = torch.tensor(np.array(next_state_), dtype=torch.float).to(self.device)
+        return state_, action_, reward_, next_state_, dones_
+
     def learn(self, state_, action_, reward_, next_state_, dones_):
-        action_ = torch.tensor(action_, dtype=torch.long).view(-1, 1).to(self.device)
-        reward_ = torch.tensor(reward_, dtype=torch.float).view(-1, 1).to(self.device)
-        dones_ = torch.tensor(dones_, dtype=torch.long).view(-1, 1).to(self.device)
+        state_, action_, reward_, next_state_, dones_ = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
 
         self.optimizer.zero_grad()
         value = self.eval(state_).gather(1, action_)
@@ -71,6 +77,7 @@ class DQN:
         return loss.item()
 
     def choose_action(self, state_, epsilon_):
+        state_ = torch.tensor(state_, dtype=torch.float).view(1,-1)
         if np.random.uniform(0, 1) > epsilon_:
             return torch.argmax(self.eval(state_)).item()
         return self.env.action_space.sample()

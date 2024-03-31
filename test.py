@@ -1,9 +1,11 @@
 import gym
+
 from Q_learning import QLearning
 from Sarsa import Sarsa
 from DQN import DQN
 from DDQN import DDQN
 from DuelingDQN import DuelingDQN
+from PG import PolicyGradient
 
 
 def test(learn_method, env_name):
@@ -29,3 +31,4 @@ if __name__ == '__main__':
     # test(DQN, 'CartPole-v1')
     # test(DDQN, 'CartPole-v1')
     test(DuelingDQN, 'CartPole-v1')
+    # test(PolicyGradient, env_name='CartPole-v1')
