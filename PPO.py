@@ -15,7 +15,7 @@ class Critic(nn.Module):
         self.fc2 = nn.Linear(hidden_size, 1)
 
     def forward(self, x):
-        # 输出为1，因为一个状态对应一个价值
+        # 输出为 [b,1]，因为一个状态对应一个价值
         x = F.relu(self.fc1(x))
         return self.fc2(x)
 
@@ -74,12 +74,13 @@ class PPO(PolicyGradient):
                 log_new_prob = torch.log(new_prob.gather(1, actions).view(-1, 1))
 
                 # 不收敛的问题要么在这，要么是参数设置
-                # KL_div = F.kl_div(torch.log(old_prob).detach(), new_prob, reduction='batchmean')
+                # KL = F.kl_div(torch.log(old_prob), new_prob, reduction='batchmean')  # 调用这个函数容易让反向传播失效
                 KL_div = self.KL_divergence(old_prob, new_prob)
                 ratios = torch.exp(log_new_prob - log_old_prob.detach())
                 loss_actor = -torch.mean(ratios * advantages.detach()) + self.lmbda * KL_div
 
-                self.optimizer.zero_grad()
+                # 谁能想到问题是optimizer没有归零（之前错在optimizer.zero_grad，应该是optimizer_actor.zero_grad）
+                self.optimizer_actor.zero_grad()
                 loss_actor.backward()
                 self.optimizer_actor.step()
 
@@ -90,7 +91,6 @@ class PPO(PolicyGradient):
                 self.optimizer_critic.step()
 
             new_prob = self.actor(states)
-            # KL_div = F.kl_div(new_prob, old_prob)
             KL_div = self.KL_divergence(old_prob, new_prob)
             if KL_div > 0.1:
                 self.lmbda = self.lmbda * 2
@@ -102,27 +102,14 @@ class PPO(PolicyGradient):
             self.load_model()
 
         for episode in range(episodes_):
-            state = self.env.reset()
-            trajectory_dict = dict({'states': [], 'actions': [], 'rewards': [], 'next_states': [], 'dones': []})
+            trajectory_dict = self.explore_trajectory(episodes_)
 
-            for t in range(episodes_):
-                action = self.choose_action(state, self.epsilon)
-                next_state, reward, done, _ = self.env.step(action)
-
-                trajectory_dict['states'].append(state)
-                trajectory_dict['actions'].append(action)
-                trajectory_dict['rewards'].append(reward)
-                trajectory_dict['next_states'].append(next_state)
-                trajectory_dict['dones'].append(done)
-
-                state = next_state
-                if done:
-                    break
+            # 我想通过buffer来利用过去的经验
             self.memory.append(trajectory_dict)
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
-
             self.update()
             self.memory.clear()
+
             if episode % 1000 == 0:
                 print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
                     self.reward_buffer)))

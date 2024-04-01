@@ -62,30 +62,34 @@ class PolicyGradient(DQN):
 
         return loss_sum
 
+    def explore_trajectory(self, episodes_):
+        state = self.env.reset()
+        trajectory_dict = dict({'states': [], 'actions': [], 'rewards': [], 'next_states': [], 'dones': []})
+
+        for t in range(episodes_):
+            action = self.choose_action(state, self.epsilon)
+            next_state, reward, done, _ = self.env.step(action)
+
+            trajectory_dict['states'].append(state)
+            trajectory_dict['actions'].append(action)
+            trajectory_dict['rewards'].append(reward)
+            trajectory_dict['next_states'].append(next_state)
+            trajectory_dict['dones'].append(done)
+
+            state = next_state
+            if done:
+                break
+        return trajectory_dict
+
     def train(self, episodes_, pretrain=False):
         if pretrain:
             self.load_model()
 
         # PG的训练是通过一条条完整的路径，所以先收集数据再训练，与DQN不同
         for episode in range(episodes_):
-            state = self.env.reset()
-            trajectory_dict = dict({'states': [], 'actions': [], 'rewards': [], 'next_states': [], 'dones': []})
+            trajectory_dict = self.explore_trajectory(episodes_)
 
-            for t in range(episodes_):
-                action = self.choose_action(state, self.epsilon)
-                next_state, reward, done, _ = self.env.step(action)
-
-                trajectory_dict['states'].append(state)
-                trajectory_dict['actions'].append(action)
-                trajectory_dict['rewards'].append(reward)
-                trajectory_dict['next_states'].append(next_state)
-                trajectory_dict['dones'].append(done)
-
-                state = next_state
-                if done:
-                    break
-
-            # 可以通过memory记录问题，然后用重要性方法转换概率，但这里主要是简要实现，memory留到PPO解决
+            # 可以通过memory记录轨迹，然后用重要性方法转换概率，但这里主要是简要实现，memory留到PPO解决
             loss_sum = self.learn(trajectory_dict['states'], trajectory_dict['actions'], trajectory_dict['rewards'],
                                   trajectory_dict['next_states'], trajectory_dict['dones'])
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
