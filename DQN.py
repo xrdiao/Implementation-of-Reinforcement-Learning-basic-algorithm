@@ -39,9 +39,9 @@ class DQN:
             self.action_size = self.env.action_space.n
 
         # hidden = 16
-        self.eval = Model(self.action_size, self.state_size,  self.hidden_size)
+        self.eval = Model(self.action_size, self.state_size, self.hidden_size)
         self.target = Model(self.action_size, self.state_size, self.hidden_size)
-        self.optimizer = optim.Adam(self.eval.parameters(), lr=0.01)    # 这里加一个weight_decay直接就不收敛了，估计是因为参数本来就不多。
+        self.optimizer = optim.Adam(self.eval.parameters(), lr=0.01)  # 这里加一个weight_decay直接就不收敛了，估计是因为参数本来就不多。
         self.memory = ReplayBuffer(500)
 
         self.explosion_step = explosion_step_
@@ -72,20 +72,20 @@ class DQN:
     def learn(self, state_, action_, reward_, next_state_, dones_):
         state_, action_, reward_, next_state_, dones_ = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
 
-        self.optimizer.zero_grad()
         value = self.eval(state_).gather(1, action_)
         next_value, _ = torch.max(self.target(next_state_), dim=1)
 
         # done意味着终止，所以done状态只有reward
         target = reward_ + self.gamma * next_value.view(-1, 1).detach() * (1 - dones_)
 
-        loss = torch.mean(F.mse_loss(target, value))
+        self.optimizer.zero_grad()
+        loss = torch.mean(F.mse_loss(target, value)).to(self.device)
         loss.backward()
         self.optimizer.step()
         return loss.item()
 
     def choose_action(self, state_, epsilon_):
-        state_ = torch.tensor(state_, dtype=torch.float).view(1,-1)
+        state_ = torch.tensor(state_, dtype=torch.float).view(1, -1)
         if np.random.uniform(0, 1) > epsilon_:
             return torch.argmax(self.eval(state_)).item()
         return self.env.action_space.sample()
