@@ -112,4 +112,5 @@ class PPO(PolicyGradient):
                 print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
                     self.reward_buffer)))
                 self.reward_buffer.clear()
-                torch.save(self.eval.state_dict(), self.get_path())
+                torch.save(self.critic.state_dict(), self.get_path('critic'))
+                torch.save(self.actor.state_dict(), self.get_path('actor'))
