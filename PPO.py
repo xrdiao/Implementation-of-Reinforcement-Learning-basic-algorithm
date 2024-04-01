@@ -1,11 +1,9 @@
 from PG import PolicyGradient
-import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
 import torch.nn as nn
 from collections import deque
-import random
 
 
 class Critic(nn.Module):

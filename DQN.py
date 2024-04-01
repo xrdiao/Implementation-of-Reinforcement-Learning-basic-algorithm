@@ -5,8 +5,8 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch import nn
-import gym
 from relay_buffer import ReplayBuffer
+from gym import spaces
 
 
 class Model(torch.nn.Module):
@@ -27,9 +27,16 @@ class DQN:
         self.env = env_
         self.alpha = alpha_
         self.epsilon = epsilon_
-        self.state_size = self.env.observation_space.shape[0]
-        self.action_size = self.env.action_space.n
         self.hidden_size = 16
+
+        if isinstance(self.env.observation_space, spaces.Box):
+            self.state_size = self.env.observation_space.shape[0]
+        else:
+            self.state_size = not self.env.observation_space.n
+        if isinstance(self.env.action_space, spaces.Box):
+            self.action_size = self.env.action_space.shape[0]
+        else:
+            self.action_size = self.env.action_space.n
 
         # hidden = 16
         self.eval = Model(self.action_size, self.state_size,  self.hidden_size)

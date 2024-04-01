@@ -1,6 +1,5 @@
 import torch.nn.functional as F
 import torch.optim as optim
-import numpy as np
 from torch import nn
 
 from DQN import DQN
