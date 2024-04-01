@@ -41,6 +41,17 @@ class PPO(PolicyGradient):
         KL_divs = torch.tensor(KL_divs, dtype=torch.float).view(-1, 1)
         return torch.mean(KL_divs)
 
+    def cal_advantages(self, deltas):
+        advantage = 0
+        advantages = []
+        # 在每个时刻利用已有的轨迹数据计算GAE
+        for delta in reversed(deltas):
+            advantage = self.gamma * self.lmbda * advantage + delta
+            advantages.append(advantage)
+        advantages.reverse()
+        advantages = torch.tensor(advantages, dtype=torch.float)
+        return advantages
+
     def update(self):
         for trajectory in self.memory:
             states, actions, rewards, next_states, dones = trajectory['states'], trajectory['actions'], trajectory[
@@ -48,21 +59,13 @@ class PPO(PolicyGradient):
             states, actions, rewards, next_states, dones_ = self.numpy2tensor(states, actions, rewards, next_states,
                                                                               dones)
 
-            # 计算优势函数
             values = self.critic(states)
             next_values = self.critic(next_states)
             targets = rewards + self.gamma * next_values * (1 - dones_)
             deltas = targets - values
+            advantages = self.cal_advantages(deltas)
 
-            advantage = 0
-            advantages = []
-            for delta in reversed(deltas):
-                advantage = self.gamma * advantage + delta
-                advantages.append(advantage)
-            advantages.reverse()
-            advantages = torch.tensor(advantages, dtype=torch.float)
-
-            # 原始概率，和选取动作的log概率
+            # 原始概率，和选取动作的log概率，log概率只是用来加速计算的，没有别的用处。
             old_prob = self.actor(states)
             log_old_prob = torch.log(old_prob.gather(1, actions).view(-1, 1))
 

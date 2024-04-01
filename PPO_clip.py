@@ -17,18 +17,10 @@ class PPOClip(PPO):
             states, actions, rewards, next_states, dones_ = self.numpy2tensor(states, actions, rewards, next_states,
                                                                               dones)
 
-            # 计算优势函数
             values = self.critic(states)
             targets = rewards + self.gamma * self.critic(next_states) * (1 - dones_)
             deltas = targets - values
-
-            advantage = 0
-            advantages = []
-            for delta in reversed(deltas):
-                advantage = self.gamma * advantage + delta
-                advantages.append(advantage)
-            advantages.reverse()
-            advantages = torch.tensor(advantages, dtype=torch.float)
+            advantages = self.cal_advantages(deltas)
 
             log_old_prob = torch.log(self.actor(states).gather(1, actions).view(-1, 1)).detach()
 
