@@ -57,8 +57,8 @@ class DDPG(DQN):
         self.critic = Critic(self.action_size, self.state_size, self.hidden_size).to(self.device)
         self.critic_target = Critic(self.action_size, self.state_size, self.hidden_size).to(self.device)
 
-        self.actor_optimizer = optim.Adam(self.actor.parameters())
-        self.critic_optimizer = optim.Adam(self.critic.parameters())
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=0.001)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=0.001)
 
         self.name = 'DDPG'
 
@@ -121,8 +121,8 @@ class DDPG(DQN):
                 self.critic_target.load_state_dict(self.critic.state_dict())
                 self.actor_target.load_state_dict(self.actor.state_dict())
 
-            if episode % 1000 == 0:
+            if episode % 100 == 0:
                 print("Episode {}, reward:{}".format(episode, sum(self.reward_buffer) / len(self.reward_buffer)))
-                torch.save(self.critic.state_dict(), 'models/' + self.name + 'critic.pth')
-                torch.save(self.actor.state_dict(), 'models/' + self.name + 'actor.pth')
+                torch.save(self.critic.state_dict(), self.get_path('critic'))
+                torch.save(self.actor.state_dict(), self.get_path('actor'))
                 self.reward_buffer.clear()

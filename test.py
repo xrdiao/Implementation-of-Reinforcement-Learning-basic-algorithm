@@ -21,10 +21,10 @@ def test(learn_method, env_name):
     render = True
 
     env = gym.make(env_name)
-    method = learn_method(env, gamma, alpha, explosion_step, epsilon)
+    agent = learn_method(env, gamma, alpha, explosion_step, epsilon)
 
-    method.train(episodes)
-    method.test(3, render=render)
+    agent.train(episodes)
+    agent.test(3, render=render)
     # method.plot_reward()
 
 

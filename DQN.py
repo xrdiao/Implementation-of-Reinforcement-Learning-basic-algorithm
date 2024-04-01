@@ -58,8 +58,8 @@ class DQN:
         self.target.to(self.device)
         self.name = 'DQN'
 
-    def get_path(self):
-        return 'models/' + self.name + '.pth'
+    def get_path(self, addition=''):
+        return 'models/' + self.name + addition + '.pth'
 
     def numpy2tensor(self, state_, action_, reward_, next_state_, dones_):
         action_ = torch.tensor(np.array(action_), dtype=torch.long).view(-1, 1).to(self.device)
