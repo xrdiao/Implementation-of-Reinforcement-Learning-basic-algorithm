@@ -23,7 +23,7 @@ class PPOContinuous(PPOClip):
     def __init__(self, env_, gamma_, alpha_, explosion_step_, epsilon_):
         super(PPOContinuous, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
         self.actor = Actor(self.action_size, self.state_size, self.hidden_size).to(self.device)
-        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=0.001, weight_decay=1e-4)
+        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=0.001)
 
     def choose_action(self, state_, epsilon_):
         state_ = torch.tensor(state_, dtype=torch.float).view(1, -1).to(self.device)
@@ -64,11 +64,10 @@ class PPOContinuous(PPOClip):
                 loss_actor = torch.mean(-torch.min(left, right)).to(self.device)
                 loss_critic = torch.mean(F.mse_loss(targets.detach(), self.critic(states))).to(self.device)
 
-                self.optimizer_critic.zero_grad()
                 self.optimizer_actor.zero_grad()
-
-                loss_critic.backward()
                 loss_actor.backward()
-
                 self.optimizer_actor.step()
+
+                self.optimizer_critic.zero_grad()
+                loss_critic.backward()
                 self.optimizer_critic.step()
