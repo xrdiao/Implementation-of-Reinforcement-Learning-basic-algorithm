@@ -94,7 +94,7 @@ class PPOContinuous(PPOClip):
                 deltas = targets - values
                 advantages = self.cal_advantages(deltas).detach()
 
-            for step in range(8):
+            for step in range(10):
                 mu, std = self.actor(states)
                 action_dicts = torch.distributions.Normal(mu, std)
 
