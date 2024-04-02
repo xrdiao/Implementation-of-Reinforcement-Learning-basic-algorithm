@@ -98,6 +98,9 @@ class PPO(PolicyGradient):
             elif KL_div < 0.01:
                 self.lmbda = self.lmbda / 2
 
+    def load_model(self, addition='_actor'):
+        self.actor.load_state_dict(torch.load(self.get_path(addition)))
+
     def train(self, episodes_, pretrain=False):
         if pretrain:
             self.load_model()
@@ -110,9 +113,9 @@ class PPO(PolicyGradient):
             self.update()
             self.memory.clear()
 
-            if episode % 1000 == 0:
+            if episode % 500 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
                     self.reward_buffer)))
                 self.reward_buffer.clear()
-                torch.save(self.critic.state_dict(), self.get_path('critic'))
-                torch.save(self.actor.state_dict(), self.get_path('actor'))
+                torch.save(self.critic.state_dict(), self.get_path('_critic'))
+                torch.save(self.actor.state_dict(), self.get_path('_actor'))

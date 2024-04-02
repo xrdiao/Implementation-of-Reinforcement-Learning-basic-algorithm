@@ -17,13 +17,14 @@ def test(learn_method, env_name):
     explosion_step = 100
     max_epsilon = 1
     epsilon = max_epsilon
-    gamma = 0.9
+    gamma = 0.99
     alpha = 0.7
     render = True
 
     env = gym.make(env_name)
     agent = learn_method(env, gamma, alpha, explosion_step, epsilon)
 
+    print('------------' + agent.name + '--------------')
     agent.train(episodes)
     agent.test(3, render=render)
     # method.plot_reward()
@@ -32,9 +33,9 @@ def test(learn_method, env_name):
 if __name__ == '__main__':
     # test(QLearning, 'Taxi-v3')
     # test(Sarsa, 'Taxi-v3')
-    # test(DQN, 'CartPole-v1')
-    # test(DDQN, 'CartPole-v1')
-    # test(DuelingDQN, 'CartPole-v1')
+    test(DQN, 'CartPole-v1')
+    test(DDQN, 'CartPole-v1')
+    test(DuelingDQN, 'CartPole-v1')
     # test(PolicyGradient, env_name='CartPole-v1')
     # test(PPO, 'CartPole-v1')
     # test(PPOClip, 'CartPole-v1')

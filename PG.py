@@ -44,6 +44,9 @@ class PolicyGradient(DQN):
         action = action_dist.sample()
         return action.item()
 
+    def load_model(self):
+        self.actor.load_state_dict(torch.load(self.get_path()))
+
     def learn(self, state_, action_, reward_, next_state_, dones_):
         state_, action_, reward_, next_state_, dones_ = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
         G = 0
@@ -92,9 +95,9 @@ class PolicyGradient(DQN):
                                   trajectory_dict['next_states'], trajectory_dict['dones'])
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
 
-            if episode % 1000 == 0:
+            if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, loss: {}, reward:{}".format(episode, self.epsilon, loss_sum,
                                                                             sum(self.reward_buffer) / len(
                                                                                 self.reward_buffer)))
-                torch.save(self.eval.state_dict(), self.get_path())
+                torch.save(self.actor.state_dict(), self.get_path())
                 self.reward_buffer.clear()

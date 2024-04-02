@@ -124,7 +124,7 @@ class DQN:
             if episode % 200 == 0 and episode != 0:
                 self.target.load_state_dict(self.eval.state_dict())
 
-            if episode % 1000 == 0:
+            if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, loss: {}, reward:{}".format(episode, self.epsilon, loss_sum,
                                                                             sum(self.reward_buffer) / len(
                                                                                 self.reward_buffer)))

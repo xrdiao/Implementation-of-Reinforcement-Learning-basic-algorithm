@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from PPO_clip import PPOClip
+from PPO import Critic
 
 
 class Actor(nn.Module):
@@ -20,14 +21,20 @@ class Actor(nn.Module):
         mu = 2 * torch.tanh(mu)
         std = self.fc_std(x)
         std = F.softplus(std)
-        return mu, std + torch.tensor(0.01, dtype=torch.float)
+        return mu, std + 0.001
 
 
 class PPOContinuous(PPOClip):
     def __init__(self, env_, gamma_, alpha_, explosion_step_, epsilon_):
         super(PPOContinuous, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
+
+        self.hidden_size = 64
         self.actor = Actor(self.action_size, self.state_size, self.hidden_size).to(self.device)
-        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=0.001)
+        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=2e-5)
+        self.critic = Critic(self.state_size, self.hidden_size).to(self.device)
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=2e-5)
+
+        self.name = 'PPOContinuous'
 
     def choose_action(self, state_, epsilon_):
         state_ = torch.tensor(state_, dtype=torch.float).view(1, -1).to(self.device)
@@ -66,9 +73,8 @@ class PPOContinuous(PPOClip):
                 left = ratio * advantages
                 right = torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantages
 
-                loss_actor = torch.mean(-torch.min(left, right)).to(self.device)
-
                 self.optimizer_actor.zero_grad()
+                loss_actor = torch.mean(-torch.min(left, right)).to(self.device)
                 loss_actor.backward()
                 self.optimizer_actor.step()
 
