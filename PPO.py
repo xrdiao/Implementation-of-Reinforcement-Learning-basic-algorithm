@@ -106,7 +106,7 @@ class PPO(PolicyGradient):
             self.load_model()
 
         for episode in range(episodes_):
-            trajectory_dict = self.explore_trajectory(episodes_)
+            trajectory_dict = self.explore_trajectory(128)
             self.memory.append(trajectory_dict)
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
 

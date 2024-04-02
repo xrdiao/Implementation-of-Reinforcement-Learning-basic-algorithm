@@ -3,25 +3,47 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from PPO_clip import PPOClip
-from PPO import Critic
+import numpy as np
+
+
+class Critic(nn.Module):
+    def __init__(self, state_size, hidden_size):
+        super(Critic, self).__init__()
+        self.fc1 = nn.Sequential(
+            nn.Linear(3, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1),
+        )
+
+    def forward(self, x):
+        x = self.fc1(x)
+        return x
 
 
 class Actor(nn.Module):
     def __init__(self, action_size, state_size, hidden_size):
         super(Actor, self).__init__()
-        self.fc1 = nn.Linear(state_size, hidden_size)
-        self.fc_mu = nn.Linear(hidden_size, action_size)
-        self.fc_std = nn.Linear(hidden_size, action_size)
+        self.fc1 = nn.Sequential(
+            nn.Linear(3, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+        )
+        self.fc_mu = nn.Linear(256, action_size)
+        self.fc_std = nn.Linear(256, action_size)
 
     # 前向传播
     def forward(self, x):
         x = self.fc1(x)
-        x = F.relu(x)
-        mu = self.fc_mu(x)
-        mu = 2 * torch.tanh(mu)
-        std = self.fc_std(x)
-        std = F.softplus(std)
-        return mu, std + 0.001
+        mu = 2 * torch.tanh(self.fc_mu(x))
+        std = F.softplus(self.fc_std(x)) + 0.001
+        return mu, std
 
 
 class PPOContinuous(PPOClip):
@@ -47,6 +69,14 @@ class PPOContinuous(PPOClip):
         action = torch.distributions.Normal(mu, std).sample().item()
         return [action]
 
+    def numpy2tensor(self, state_, action_, reward_, next_state_, dones_):
+        action_ = torch.tensor(np.array(action_), dtype=torch.float).view(-1, 1).to(self.device)
+        reward_ = torch.tensor(np.array(reward_), dtype=torch.float).view(-1, 1).to(self.device)
+        dones_ = torch.tensor(np.array(dones_), dtype=torch.long).view(-1, 1).to(self.device)
+        state_ = torch.tensor(np.array(state_), dtype=torch.float).to(self.device)
+        next_state_ = torch.tensor(np.array(next_state_), dtype=torch.float).to(self.device)
+        return state_, action_, reward_, next_state_, dones_
+
     def update(self):
         for trajectory in self.memory:
             states, actions, rewards, next_states, dones = trajectory['states'], trajectory['actions'], trajectory[
@@ -54,16 +84,17 @@ class PPOContinuous(PPOClip):
             states, actions, rewards, next_states, dones_ = self.numpy2tensor(states, actions, rewards, next_states,
                                                                               dones)
 
-            values = self.critic(states)
-            targets = rewards + self.gamma * self.critic(next_states) * (1 - dones_)
-            deltas = targets - values
-            advantages = self.cal_advantages(deltas).detach()
+            with torch.no_grad():
+                mu, std = self.actor(states)
+                action_dicts = torch.distributions.normal.Normal(mu, std)
+                log_old_prob = action_dicts.log_prob(actions).detach()
 
-            mu, std = self.actor(states)
-            action_dicts = torch.distributions.Normal(mu, std)
-            log_old_prob = action_dicts.log_prob(actions).detach()
+                values = self.critic(states)
+                targets = rewards + self.gamma * self.critic(next_states) * (1 - dones_)
+                deltas = targets - values
+                advantages = self.cal_advantages(deltas).detach()
 
-            for step in range(10):
+            for step in range(8):
                 mu, std = self.actor(states)
                 action_dicts = torch.distributions.Normal(mu, std)
 
@@ -74,7 +105,7 @@ class PPOContinuous(PPOClip):
                 right = torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantages
 
                 self.optimizer_actor.zero_grad()
-                loss_actor = torch.mean(-torch.min(left, right)).to(self.device)
+                loss_actor = -torch.mean(torch.min(left, right)).to(self.device)
                 loss_actor.backward()
                 self.optimizer_actor.step()
 

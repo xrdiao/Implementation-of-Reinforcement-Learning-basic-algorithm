@@ -33,9 +33,9 @@ def test(learn_method, env_name):
 if __name__ == '__main__':
     # test(QLearning, 'Taxi-v3')
     # test(Sarsa, 'Taxi-v3')
-    test(DQN, 'CartPole-v1')
-    test(DDQN, 'CartPole-v1')
-    test(DuelingDQN, 'CartPole-v1')
+    # test(DQN, 'CartPole-v1')
+    # test(DDQN, 'CartPole-v1')
+    # test(DuelingDQN, 'CartPole-v1')
     # test(PolicyGradient, env_name='CartPole-v1')
     # test(PPO, 'CartPole-v1')
     # test(PPOClip, 'CartPole-v1')
