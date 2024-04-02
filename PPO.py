@@ -29,7 +29,7 @@ class PPO(PolicyGradient):
         self.critic = Critic(self.state_size, self.hidden_size).to(self.device)
         self.optimizer_critic = optim.Adam(self.critic.parameters(), lr=0.001)
         self.memory = deque(maxlen=50)
-        self.lmbda = 1
+        self.lmbda = 0.95
 
         self.name = 'PPO'
 
@@ -49,7 +49,7 @@ class PPO(PolicyGradient):
             advantage = self.gamma * self.lmbda * advantage + delta
             advantages.append(advantage)
         advantages.reverse()
-        advantages = torch.tensor(advantages, dtype=torch.float)
+        advantages = torch.tensor(advantages, dtype=torch.float).view(-1, 1)
         return advantages
 
     def update(self):

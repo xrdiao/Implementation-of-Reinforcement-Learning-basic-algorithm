@@ -17,7 +17,7 @@ def test(learn_method, env_name):
     explosion_step = 100
     max_epsilon = 1
     epsilon = max_epsilon
-    gamma = 0.6
+    gamma = 0.9
     alpha = 0.7
     render = True
 
@@ -38,5 +38,5 @@ if __name__ == '__main__':
     # test(PolicyGradient, env_name='CartPole-v1')
     # test(PPO, 'CartPole-v1')
     # test(PPOClip, 'CartPole-v1')
-    test(PPOContinuous, 'MountainCarContinuous-v0')
+    test(PPOContinuous, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')

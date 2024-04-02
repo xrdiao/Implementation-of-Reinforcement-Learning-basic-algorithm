@@ -9,14 +9,18 @@ class Actor(nn.Module):
     def __init__(self, action_size, state_size, hidden_size):
         super(Actor, self).__init__()
         self.fc1 = nn.Linear(state_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, action_size)
-        self.fc3 = nn.Linear(hidden_size, action_size)
+        self.fc_mu = nn.Linear(hidden_size, action_size)
+        self.fc_std = nn.Linear(hidden_size, action_size)
 
+    # 前向传播
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        mu = F.tanh(self.fc2(x)) * 2
-        std = F.softplus(self.fc3(x))
-        return mu, std
+        x = self.fc1(x)
+        x = F.relu(x)
+        mu = self.fc_mu(x)
+        mu = 2 * torch.tanh(mu)
+        std = self.fc_std(x)
+        std = F.softplus(std)
+        return mu, std + torch.tensor(0.01, dtype=torch.float)
 
 
 class PPOContinuous(PPOClip):
@@ -55,6 +59,7 @@ class PPOContinuous(PPOClip):
             for step in range(10):
                 mu, std = self.actor(states)
                 action_dicts = torch.distributions.Normal(mu, std)
+
                 log_new_prob = action_dicts.log_prob(actions)
 
                 ratio = torch.exp(log_new_prob - log_old_prob)
@@ -62,12 +67,12 @@ class PPOContinuous(PPOClip):
                 right = torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantages
 
                 loss_actor = torch.mean(-torch.min(left, right)).to(self.device)
-                loss_critic = torch.mean(F.mse_loss(targets.detach(), self.critic(states))).to(self.device)
 
                 self.optimizer_actor.zero_grad()
                 loss_actor.backward()
                 self.optimizer_actor.step()
 
                 self.optimizer_critic.zero_grad()
+                loss_critic = torch.mean(F.mse_loss(targets.detach(), self.critic(states))).to(self.device)
                 loss_critic.backward()
                 self.optimizer_critic.step()
