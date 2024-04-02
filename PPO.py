@@ -104,10 +104,9 @@ class PPO(PolicyGradient):
 
         for episode in range(episodes_):
             trajectory_dict = self.explore_trajectory(episodes_)
-
-            # 我想通过buffer来利用过去的经验
             self.memory.append(trajectory_dict)
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
+
             self.update()
             self.memory.clear()
 

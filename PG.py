@@ -33,7 +33,7 @@ class PolicyGradient(DQN):
         self.name = 'PG'
 
     def choose_action(self, state_, epsilon_):
-        state_ = torch.tensor(state_, dtype=torch.float).view(1, -1)
+        state_ = torch.tensor(state_, dtype=torch.float).view(1, -1).to(self.device)
         # 通过随机采用获取动作，不再是DQN中的选取最大值
         probs = self.actor(state_)
 

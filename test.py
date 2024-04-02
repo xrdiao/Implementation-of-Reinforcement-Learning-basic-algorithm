@@ -9,6 +9,7 @@ from PG import PolicyGradient
 from PPO import PPO
 from PPO_clip import PPOClip
 from DDPG import DDPG
+from PPO_continuous import PPOContinuous
 
 
 def test(learn_method, env_name):
@@ -37,4 +38,5 @@ if __name__ == '__main__':
     # test(PolicyGradient, env_name='CartPole-v1')
     # test(PPO, 'CartPole-v1')
     # test(PPOClip, 'CartPole-v1')
-    test(DDPG, 'MountainCarContinuous-v0')
+    test(PPOContinuous, 'MountainCarContinuous-v0')
+    # test(DDPG, 'MountainCarContinuous-v0')

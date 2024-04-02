@@ -26,12 +26,13 @@ class PPOClip(PPO):
 
             for step in range(10):
                 log_new_prob = torch.log(self.actor(states).gather(1, actions).view(-1, 1))
-                ratio = torch.exp(log_new_prob - log_old_prob)
-                left = ratio * advantages
-                right = torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantages
 
-                loss_actor = torch.mean(-torch.min(left, right))
-                loss_critic = torch.mean(F.mse_loss(targets.detach(), self.critic(states)))
+                ratio = torch.exp(log_new_prob - log_old_prob)
+                left = ratio * advantages.detach()
+                right = torch.clamp(ratio, 1 - self.eps, 1 + self.eps) * advantages.detach()
+
+                loss_actor = torch.mean(-torch.min(left, right)).to(self.device)
+                loss_critic = torch.mean(F.mse_loss(targets.detach(), self.critic(states))).to(self.device)
 
                 self.optimizer_critic.zero_grad()
                 self.optimizer_actor.zero_grad()
