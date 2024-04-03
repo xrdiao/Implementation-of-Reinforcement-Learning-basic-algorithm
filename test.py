@@ -39,5 +39,6 @@ if __name__ == '__main__':
     # test(PolicyGradient, env_name='CartPole-v1')
     # test(PPO, 'CartPole-v1')
     # test(PPOClip, 'CartPole-v1')
-    test(PPOContinuous, 'Pendulum-v0')
-    # test(DDPG, 'MountainCarContinuous-v0')
+    # test(PPOContinuous, 'Pendulum-v0')
+    # test(PPOContinuous, 'MountainCarContinuous-v0')
+    test(DDPG, 'Pendulum-v0')

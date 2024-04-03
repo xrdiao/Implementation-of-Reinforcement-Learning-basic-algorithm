@@ -16,13 +16,13 @@ class PPOClip(PPO):
                 'rewards'], trajectory['next_states'], trajectory['dones']
             states, actions, rewards, next_states, dones_ = self.numpy2tensor(states, actions, rewards, next_states,
                                                                               dones)
+            with torch.no_grad():
+                values = self.critic(states)
+                targets = rewards + self.gamma * self.critic(next_states) * (1 - dones_)
+                deltas = targets - values
+                advantages = self.cal_advantages(deltas)
 
-            values = self.critic(states)
-            targets = rewards + self.gamma * self.critic(next_states) * (1 - dones_)
-            deltas = targets - values
-            advantages = self.cal_advantages(deltas)
-
-            log_old_prob = torch.log(self.actor(states).gather(1, actions).view(-1, 1)).detach()
+                log_old_prob = torch.log(self.actor(states).gather(1, actions).view(-1, 1)).detach()
 
             for step in range(10):
                 log_new_prob = torch.log(self.actor(states).gather(1, actions).view(-1, 1))

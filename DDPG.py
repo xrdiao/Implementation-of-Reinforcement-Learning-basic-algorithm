@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch import nn
 from relay_buffer import ReplayBuffer
 from DQN import DQN
+from PPO_continuous import *
 
 
 class Actor(nn.Module):
@@ -15,10 +16,17 @@ class Actor(nn.Module):
     :return action(s) [b,1]
     '''
 
-    def __init__(self, action_size, state_size, hidden_size, action_bound):
+    def __init__(self, action_size, state_size, action_bound):
         super(Actor, self).__init__()
-        self.fc1 = nn.Linear(state_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, action_size)
+        self.fc1 = nn.Sequential(
+            nn.Linear(state_size, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+        )
+        self.fc2 = nn.Linear(256, action_size)
         self.bound = action_bound
 
     def forward(self, x):
@@ -34,31 +42,39 @@ class Critic(nn.Module):
     :return Q(s,a), [b,1]
     '''
 
-    def __init__(self, action_size, state_size, hidden_size):
+    def __init__(self, action_size, state_size):
         super(Critic, self).__init__()
-        self.fc1 = nn.Linear(state_size + action_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, 1)
+        self.fc1 = nn.Sequential(
+            nn.Linear(action_size + state_size, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1),
+        )
 
     def forward(self, states, actions):
         # input [states, actions]
         x = torch.cat([states, actions], dim=1)
-        x = F.relu(self.fc1(x))
-        return self.fc2(x)
+        x = self.fc1(x)
+        return x
 
 
 class DDPG(DQN):
     def __init__(self, env_, gamma_, alpha_, explosion_step_, epsilon_):
         super(DDPG, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
+        self.hidden_size = 64
         self.action_bound = self.env.action_space.high[0]
 
-        self.actor = Actor(self.action_size, self.state_size, self.hidden_size, self.action_bound).to(self.device)
-        self.actor_target = Actor(self.action_size, self.state_size, self.hidden_size, self.action_bound).to(
+        self.actor = Actor(self.action_size, self.state_size, self.action_bound).to(self.device)
+        self.actor_target = Actor(self.action_size, self.state_size, self.action_bound).to(
             self.device)
-        self.critic = Critic(self.action_size, self.state_size, self.hidden_size).to(self.device)
-        self.critic_target = Critic(self.action_size, self.state_size, self.hidden_size).to(self.device)
+        self.critic = Critic(self.action_size, self.state_size).to(self.device)
+        self.critic_target = Critic(self.action_size, self.state_size).to(self.device)
 
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=0.001)
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=0.001)
+        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=2e-5)
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=2e-5)
 
         self.name = 'DDPG'
 
@@ -71,7 +87,8 @@ class DDPG(DQN):
         return action
 
     def learn(self, state_, action_, reward_, next_state_, dones_):
-        states, actions, rewards, next_states, dones = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
+        states, _, rewards, next_states, dones = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
+        actions = torch.tensor(np.array(action_), dtype=torch.float).view(-1, 1).to(self.device)
 
         next_actions = self.actor_target(next_states)
         Q_values = self.critic(states, actions)
@@ -79,16 +96,16 @@ class DDPG(DQN):
 
         targets = rewards + self.gamma * next_Q
 
-        self.critic_optimizer.zero_grad()
+        self.optimizer_critic.zero_grad()
         critic_loss = F.mse_loss(Q_values, targets.detach()).to(self.device)
         critic_loss.backward()
-        self.critic_optimizer.step()
+        self.optimizer_critic.step()
 
-        self.actor_optimizer.zero_grad()
+        self.optimizer_actor.zero_grad()
         action_ = self.actor(states)
         actor_loss = - torch.mean(self.critic(states, action_)).to(self.device)
         actor_loss.backward()
-        self.actor_optimizer.step()
+        self.optimizer_actor.step()
 
     def train(self, episodes_, pretrain=False):
         # 其实和DQN的训练是一样的
@@ -121,7 +138,7 @@ class DDPG(DQN):
                 self.critic_target.load_state_dict(self.critic.state_dict())
                 self.actor_target.load_state_dict(self.actor.state_dict())
 
-            if episode % 100 == 0:
+            if episode % 500 == 0 and episode != 0:
                 print("Episode {}, reward:{}".format(episode, sum(self.reward_buffer) / len(self.reward_buffer)))
                 torch.save(self.critic.state_dict(), self.get_path('critic'))
                 torch.save(self.actor.state_dict(), self.get_path('actor'))

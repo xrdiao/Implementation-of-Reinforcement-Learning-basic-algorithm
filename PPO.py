@@ -27,7 +27,7 @@ class PPO(PolicyGradient):
         super(PPO, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
 
         self.critic = Critic(self.state_size, self.hidden_size).to(self.device)
-        self.optimizer_critic = optim.Adam(self.critic.parameters(), lr=0.001)
+        self.optimizer_critic = optim.Adam(self.critic.parameters(), lr=1e-3)
         self.memory = deque(maxlen=50)
         self.lmbda = 0.95
 
@@ -53,21 +53,22 @@ class PPO(PolicyGradient):
         return advantages
 
     def update(self):
+        # 本质是learn，只是因为没有input，所以和learn做一个区分
         for trajectory in self.memory:
             states, actions, rewards, next_states, dones = trajectory['states'], trajectory['actions'], trajectory[
                 'rewards'], trajectory['next_states'], trajectory['dones']
             states, actions, rewards, next_states, dones_ = self.numpy2tensor(states, actions, rewards, next_states,
                                                                               dones)
+            with torch.no_grad():
+                values = self.critic(states)
+                next_values = self.critic(next_states)
+                targets = rewards + self.gamma * next_values * (1 - dones_)
+                deltas = targets - values
+                advantages = self.cal_advantages(deltas)
 
-            values = self.critic(states)
-            next_values = self.critic(next_states)
-            targets = rewards + self.gamma * next_values * (1 - dones_)
-            deltas = targets - values
-            advantages = self.cal_advantages(deltas)
-
-            # 原始概率，和选取动作的log概率，log概率只是用来加速计算的，没有别的用处。
-            old_prob = self.actor(states)
-            log_old_prob = torch.log(old_prob.gather(1, actions).view(-1, 1))
+                # 原始概率，和选取动作的log概率，log概率只是用来加速计算的，没有别的用处。
+                old_prob = self.actor(states)
+                log_old_prob = torch.log(old_prob.gather(1, actions).view(-1, 1))
 
             # 更新Actor
             for _ in range(10):
@@ -101,19 +102,19 @@ class PPO(PolicyGradient):
     def load_model(self, addition='_actor'):
         self.actor.load_state_dict(torch.load(self.get_path(addition)))
 
-    def train(self, episodes_, pretrain=False):
+    def train(self, episodes_, pretrain=False, step=128):
         if pretrain:
             self.load_model()
 
         for episode in range(episodes_):
-            trajectory_dict = self.explore_trajectory(128)
+            trajectory_dict = self.explore_trajectory(step)
             self.memory.append(trajectory_dict)
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
 
             self.update()
             self.memory.clear()
 
-            if episode % 500 == 0 and episode != 0:
+            if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
                     self.reward_buffer)))
                 self.reward_buffer.clear()
