@@ -66,10 +66,12 @@ class PolicyGradient(DQN):
     def explore_trajectory(self, episodes_):
         state = self.env.reset()
         trajectory_dict = dict({'states': [], 'actions': [], 'rewards': [], 'next_states': [], 'dones': []})
+        rewards = 0
 
         for t in range(episodes_):
             action = self.choose_action(state, self.epsilon)
             next_state, reward, done, _ = self.env.step(action)
+            rewards += reward
 
             trajectory_dict['states'].append(state)
             trajectory_dict['actions'].append(action)
@@ -80,7 +82,7 @@ class PolicyGradient(DQN):
             state = next_state
             if done:
                 break
-        return trajectory_dict
+        return trajectory_dict, rewards
 
     def train(self, episodes_, pretrain=False):
         if pretrain:

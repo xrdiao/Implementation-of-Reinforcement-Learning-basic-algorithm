@@ -7,10 +7,10 @@ import numpy as np
 
 
 class Critic(nn.Module):
-    def __init__(self, state_size, hidden_size):
+    def __init__(self, state_size):
         super(Critic, self).__init__()
         self.fc1 = nn.Sequential(
-            nn.Linear(3, 64),
+            nn.Linear(state_size, 64),
             nn.ReLU(),
             nn.Linear(64, 128),
             nn.ReLU(),
@@ -25,10 +25,10 @@ class Critic(nn.Module):
 
 
 class Actor(nn.Module):
-    def __init__(self, action_size, state_size, hidden_size):
+    def __init__(self, action_size, state_size, action_bound):
         super(Actor, self).__init__()
         self.fc1 = nn.Sequential(
-            nn.Linear(3, 64),
+            nn.Linear(state_size, 64),
             nn.ReLU(),
             nn.Linear(64, 128),
             nn.ReLU(),
@@ -37,11 +37,11 @@ class Actor(nn.Module):
         )
         self.fc_mu = nn.Linear(256, action_size)
         self.fc_std = nn.Linear(256, action_size)
+        self.action_bound = action_bound
 
-    # 前向传播
     def forward(self, x):
         x = self.fc1(x)
-        mu = 2 * torch.tanh(self.fc_mu(x))
+        mu = self.action_bound * torch.tanh(self.fc_mu(x))
         std = F.softplus(self.fc_std(x)) + 0.001
         return mu, std
 
@@ -51,9 +51,11 @@ class PPOContinuous(PPOClip):
         super(PPOContinuous, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
 
         self.hidden_size = 64
-        self.actor = Actor(self.action_size, self.state_size, self.hidden_size).to(self.device)
+        self.action_bound = self.env.action_space.high[0]
+
+        self.actor = Actor(self.action_size, self.state_size, self.action_bound).to(self.device)
         self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=2e-5)
-        self.critic = Critic(self.state_size, self.hidden_size).to(self.device)
+        self.critic = Critic(self.state_size).to(self.device)
         self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=2e-5)
 
         self.name = 'PPOContinuous'
@@ -69,20 +71,12 @@ class PPOContinuous(PPOClip):
         action = torch.distributions.Normal(mu, std).sample().item()
         return [action]
 
-    def numpy2tensor(self, state_, action_, reward_, next_state_, dones_):
-        action_ = torch.tensor(np.array(action_), dtype=torch.float).view(-1, 1).to(self.device)
-        reward_ = torch.tensor(np.array(reward_), dtype=torch.float).view(-1, 1).to(self.device)
-        dones_ = torch.tensor(np.array(dones_), dtype=torch.long).view(-1, 1).to(self.device)
-        state_ = torch.tensor(np.array(state_), dtype=torch.float).to(self.device)
-        next_state_ = torch.tensor(np.array(next_state_), dtype=torch.float).to(self.device)
-        return state_, action_, reward_, next_state_, dones_
-
     def update(self):
         for trajectory in self.memory:
             states, actions, rewards, next_states, dones = trajectory['states'], trajectory['actions'], trajectory[
                 'rewards'], trajectory['next_states'], trajectory['dones']
-            states, actions, rewards, next_states, dones_ = self.numpy2tensor(states, actions, rewards, next_states,
-                                                                              dones)
+            states, _, rewards, next_states, dones_ = self.numpy2tensor(states, actions, rewards, next_states, dones)
+            actions = torch.tensor(np.array(actions), dtype=torch.float).view(-1, 1).to(self.device)
 
             with torch.no_grad():
                 mu, std = self.actor(states)

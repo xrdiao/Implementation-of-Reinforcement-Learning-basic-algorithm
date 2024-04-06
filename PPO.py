@@ -106,17 +106,23 @@ class PPO(PolicyGradient):
         if pretrain:
             self.load_model()
 
+        max_reward = -10000000
+
         for episode in range(episodes_):
-            trajectory_dict = self.explore_trajectory(step)
+            trajectory_dict, rewards = self.explore_trajectory(step)
             self.memory.append(trajectory_dict)
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
 
             self.update()
             self.memory.clear()
 
+            if max_reward < rewards:
+                max_reward = rewards
+                torch.save(self.critic.state_dict(), self.get_path('_critic'))
+                torch.save(self.actor.state_dict(), self.get_path('_actor'))
+
             if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
                     self.reward_buffer)))
                 self.reward_buffer.clear()
-                torch.save(self.critic.state_dict(), self.get_path('_critic'))
-                torch.save(self.actor.state_dict(), self.get_path('_actor'))
+

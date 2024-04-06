@@ -86,6 +86,10 @@ class DDPG(DQN):
         action = action.item() + self.alpha * np.random.randn(self.action_size)  # 增加探索
         return action
 
+    def load_model(self, addition='_actor'):
+        a = self.get_path(addition)
+        self.actor.load_state_dict(torch.load(self.get_path(addition)))
+
     def learn(self, state_, action_, reward_, next_state_, dones_):
         states, _, rewards, next_states, dones = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
         actions = torch.tensor(np.array(action_), dtype=torch.float).view(-1, 1).to(self.device)
@@ -108,13 +112,14 @@ class DDPG(DQN):
         self.optimizer_actor.step()
 
     def train(self, episodes_, pretrain=False):
-        # 其实和DQN的训练是一样的
+        # 和DQN的训练是一样的
         if pretrain:
             self.load_model()
 
         for episode in range(episodes_):
             state = self.env.reset()
             sum_reward = 0
+            max_reward = -10000000
 
             while True:
                 action = self.choose_action(state, self.epsilon)
@@ -133,13 +138,16 @@ class DDPG(DQN):
                     break
             self.reward_buffer.append(sum_reward)
 
-            self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * episode)
+            if max_reward < sum_reward:
+                torch.save(self.critic.state_dict(), self.get_path('_critic'))
+                torch.save(self.actor.state_dict(), self.get_path('_actor'))
+
             if episode % 200 == 0 and episode != 0:
                 self.critic_target.load_state_dict(self.critic.state_dict())
                 self.actor_target.load_state_dict(self.actor.state_dict())
 
             if episode % 500 == 0 and episode != 0:
                 print("Episode {}, reward:{}".format(episode, sum(self.reward_buffer) / len(self.reward_buffer)))
-                torch.save(self.critic.state_dict(), self.get_path('critic'))
-                torch.save(self.actor.state_dict(), self.get_path('actor'))
+                # torch.save(self.critic.state_dict(), self.get_path('_critic'))
+                # torch.save(self.actor.state_dict(), self.get_path('_actor'))
                 self.reward_buffer.clear()
