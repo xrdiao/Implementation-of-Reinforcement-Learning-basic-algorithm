@@ -100,9 +100,10 @@ class PPO(PolicyGradient):
                 self.lmbda = self.lmbda / 2
 
     def load_model(self, addition='_actor'):
-        self.actor.load_state_dict(torch.load(self.get_path(addition)))
+        self.actor.load_state_dict(torch.load(self.get_path('_actor')))
+        self.critic.load_state_dict(torch.load(self.get_path('_critic')))
 
-    def train(self, episodes_, pretrain=False, step=128):
+    def train(self, episodes_, pretrain=False, step=500):
         if pretrain:
             self.load_model()
 

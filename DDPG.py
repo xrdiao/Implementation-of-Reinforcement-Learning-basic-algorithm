@@ -125,7 +125,7 @@ class DDPG(DQN):
                 action = self.choose_action(state, self.epsilon)
                 next_state, reward, done, info = self.env.step(action)
 
-                self.memory.add(state, int(action), reward, next_state, done)
+                self.memory.add(state, action, reward, next_state, done)
 
                 if self.memory.size() > 200:
                     states, rewards, actions, next_states, dones = self.memory.sample(self.load_size)
@@ -146,8 +146,6 @@ class DDPG(DQN):
                 self.critic_target.load_state_dict(self.critic.state_dict())
                 self.actor_target.load_state_dict(self.actor.state_dict())
 
-            if episode % 500 == 0 and episode != 0:
+            if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, reward:{}".format(episode, sum(self.reward_buffer) / len(self.reward_buffer)))
-                # torch.save(self.critic.state_dict(), self.get_path('_critic'))
-                # torch.save(self.actor.state_dict(), self.get_path('_actor'))
                 self.reward_buffer.clear()
