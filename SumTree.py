@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 
 
 class SumTree:
@@ -45,7 +46,7 @@ class SumTree:
         states, rewards, actions, next_states, dones, priorities, idxes = [], [], [], [], [], [], []
 
         for b in range(batch_size):
-            sample_num = np.random.randint(b * interval, (b + 1) * interval)
+            sample_num = np.random.uniform(b * interval, (b + 1) * interval)
             priority, data, idx = self.get(sample_num)
             data = data[0]
 

@@ -12,7 +12,7 @@ class DQNPER(DQN):
 
     def __init__(self, env_, gamma_, alpha_, explosion_step_, epsilon_):
         super(DQNPER, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
-        self.memory = SumTree(capacity=1024)
+        self.memory = SumTree(capacity=512)
         self.beta = 0.5
         self.name = 'DQNPER'
 

@@ -48,6 +48,7 @@ class DQN:
         self.gamma = gamma_
         self.load_size = 64
         self.reward_buffer = deque(maxlen=10000)
+        self.loss_buffer = deque(maxlen=10000)
 
         self.min_epsilon = 0.01
         self.decay_rate = 0.01
