@@ -98,7 +98,7 @@ class DDPG(DQN):
         Q_values = self.critic(states, actions)
         next_Q = self.critic_target(next_states, next_actions)
 
-        targets = rewards + self.gamma * next_Q
+        targets = rewards + self.gamma * next_Q * (1 - dones)
 
         self.optimizer_critic.zero_grad()
         critic_loss = F.mse_loss(Q_values, targets.detach()).to(self.device)
@@ -146,6 +146,6 @@ class DDPG(DQN):
                 self.critic_target.load_state_dict(self.critic.state_dict())
                 self.actor_target.load_state_dict(self.actor.state_dict())
 
-            if episode % 1000 == 0 and episode != 0:
+            if episode % 1000 == 0:
                 print("Episode {}, reward:{}".format(episode, sum(self.reward_buffer) / len(self.reward_buffer)))
                 self.reward_buffer.clear()

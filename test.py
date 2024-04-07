@@ -25,7 +25,7 @@ def test(learn_method, env_name):
     agent = learn_method(env, gamma, alpha, explosion_step, epsilon)
 
     print('------------' + agent.name + '--------------')
-    agent.train(episodes, pretrain=False)
+    # agent.train(episodes, pretrain=False)
     agent.test(3, render=render)
     # method.plot_reward()
 
@@ -41,4 +41,5 @@ if __name__ == '__main__':
     # test(PPOClip, 'CartPole-v1')
     # test(PPOContinuous, 'Pendulum-v0')
     # test(PPOContinuous, 'MountainCarContinuous-v0')
+    # test(DDPG, 'Pendulum-v0')
     test(DDPG, 'MountainCarContinuous-v0')
