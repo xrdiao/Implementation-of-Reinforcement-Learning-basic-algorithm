@@ -21,6 +21,8 @@ class QLearning:
         self.decay_rate = 0.01
         self.max_epsilon = 1.0
 
+        self.name = 'QLearning'
+
     def choose_action(self, state_, epsilon_):
         if np.random.uniform(0, 1) > epsilon_:
             return np.argmax(self.q_table[state_, :])
@@ -41,7 +43,7 @@ class QLearning:
         self.q_table[state_, action_] = self.q_table[state_, action_] + self.alpha * (
                 target - self.q_table[state_, action_])
 
-    def train(self, episodes):
+    def train(self, episodes, pretrain=False):
         for episode in range(episodes):
             state = self.env.reset()
             rewards = 0
@@ -83,6 +85,6 @@ class QLearning:
         print('end test')
         self.env.close()
 
-    def plot_reward(self):
+    def plot_reward_loss(self, addition=''):
         plt.plot(self.reward_buffer)
         plt.show()

@@ -94,7 +94,7 @@ if __name__ == '__main__':
     for i, n in enumerate(num):
         data_ = {'num': i}
         st.add(n, data_)
-    st.max_priority()
+    st.max()
     print(st.get(2))
     # print(st.sample(6))
     print(1)

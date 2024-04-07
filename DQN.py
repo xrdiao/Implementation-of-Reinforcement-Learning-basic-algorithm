@@ -99,6 +99,9 @@ class DQN:
         if pretrain:
             self.load_model()
 
+        rewards_set = deque(maxlen=1000)
+        max_reward = -100000000
+
         for episode in range(episodes_):
             state = self.env.reset()
             loss_sum = 0
@@ -120,21 +123,34 @@ class DQN:
                 if done:
                     break
             self.reward_buffer.append(sum_reward)
+            self.loss_buffer.append(loss_sum)
+            rewards_set.append(sum_reward)
 
             self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * episode)
             if episode % 200 == 0 and episode != 0:
                 self.target.load_state_dict(self.eval.state_dict())
 
+            if max_reward < sum_reward:
+                max_reward = sum_reward
+                torch.save(self.eval.state_dict(), self.get_path())
+
             if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, loss: {}, reward:{}".format(episode, self.epsilon, loss_sum,
-                                                                            sum(self.reward_buffer) / len(
-                                                                                self.reward_buffer)))
-                torch.save(self.eval.state_dict(), self.get_path())
-                self.reward_buffer.clear()
+                                                                            sum(rewards_set) / len(rewards_set)))
 
-    def plot_reward(self):
+    def plot_reward_loss(self, addition=''):
+        reward_path = 'figs/' + self.name + '_reward' + addition + '.png'
+        loss_path = 'figs/' + self.name + '_loss' + addition + '.png'
+
+        plt.clf(), plt.cla()
         plt.plot(self.reward_buffer)
-        plt.show()
+        plt.xlabel('episode number'), plt.ylabel('reward')
+        plt.savefig(reward_path, dpi=300)
+
+        plt.clf(), plt.cla()
+        plt.plot(self.loss_buffer)
+        plt.xlabel('episode number'), plt.ylabel('loss')
+        plt.savefig(loss_path, dpi=300)
 
     def test(self, episodes, render=False):
         self.load_model()

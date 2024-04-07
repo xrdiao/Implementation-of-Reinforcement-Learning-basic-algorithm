@@ -17,34 +17,36 @@ from PPO_continuous import PPOContinuous
 from DQN_PER import DQNPER
 
 
-def test(learn_method, env_name, episodes=10000, gamma=0.99, explosion_step=100,
+def test(learn_method, env_name, addition='', episodes=10000, gamma=0.99, explosion_step=100,
          alpha=0.7, epsilon=1, render=True, pretrain=False):
     env = gym.make(env_name)
     agent = learn_method(env, gamma, alpha, explosion_step, epsilon)
 
     print('------------' + agent.name + '--------------')
     agent.train(episodes, pretrain=pretrain)
-    agent.test(3, render=render)
-    # method.plot_reward()
+    # agent.test(3, render=render)
+    agent.plot_reward_loss(addition)
 
 
-def multi_test(learn_methods, env_name, gammas, alphas, episodes=10000, explosion_step=100):
+def multi_test(learn_methods, env_name, gammas, alphas, episodes=5000, explosion_step=100):
     processes = []
     test_num = len(learn_methods)
     for i in range(test_num):
         process = multiprocessing.Process(target=test,
                                           args=(
-                                              learn_methods[i], env_name, episodes, gammas[i], explosion_step,
-                                              alphas[i]))
+                                              learn_methods[i], env_name,
+                                              '_gamma{}_alpha{}'.format(gammas[i], alphas[i]), episodes, gammas[i],
+                                              explosion_step, alphas[i]))
         process.daemon = True  # 守护线程
+        process.start()
         processes.append(process)
-    for i in range(test_num):
-        processes[i].start()
-    time.sleep(100000)
+
+    for process in processes:
+        process.join()
 
 
 if __name__ == '__main__':
-    # test(QLearning, 'Taxi-v3')
+    test(QLearning, 'Taxi-v3')
     # test(Sarsa, 'Taxi-v3')
     # test(DQN, 'CartPole-v1')
     # test(DDQN, 'CartPole-v1')
@@ -56,8 +58,8 @@ if __name__ == '__main__':
     # test(PPOContinuous, 'MountainCarContinuous-v0')
     # test(DDPG, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')
-    test(DQNPER, 'CartPole-v1')
+    # test(DQNPER, 'CartPole-v1')
 
-    # g = [0.99, 0.99, 0.99, 0.99, 0.99]
-    # a = [0.7, 0.7, 0.7, 0.7]
-    # multi_test(learn_methods=[DQN, DQN, DDQN], env_name='CartPole-v1', gammas=g, alphas=a)
+    g = [0.99, 0.7, 0.5]
+    a = [0.9, 0.7, 0.5]
+    multi_test(learn_methods=[DQN, DQN, DQN], env_name='CartPole-v1', gammas=g, alphas=a)
