@@ -39,7 +39,7 @@ class DDQN(DQN):
         target = reward_ + self.gamma * next_value.view(-1, 1).detach() * (1-dones_)
         value = self.eval(state_).gather(1, action_)
 
-        loss = torch.mean(F.mse_loss(target, value))
+        loss = torch.mean(F.mse_loss(target, value)).to(self.device)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

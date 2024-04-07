@@ -33,12 +33,14 @@ class DQNPER(DQN):
         self.optimizer.zero_grad()
         for i in range(len(ISWeights)):
             self.memory.node_num[idxes[i]] = np.abs(delta[i].detach().numpy())
-            loss = -(ISWeights[i] * delta.detach()[i] * self.eval(state_[i])[action_[i]]).to(self.device)
-            loss.backward()
+            loss = (ISWeights[i] * delta.detach()[i] * self.eval(state_[i])[action_[i]]).to(self.device)
+            # loss.backward()
             tot_loss += loss.item()
+        loss = torch.mean(F.mse_loss(target, value)).to(self.device)
+        loss.backward()
+
         self.optimizer.step()
-        if self.memory.size >= 1024:
-            print(1)
+
         return tot_loss
 
     def train(self, episodes_, pretrain=False):
@@ -60,7 +62,7 @@ class DQNPER(DQN):
                 if t == 0:
                     self.memory.add(1, data_dict)
                 else:
-                    self.memory.add(self.memory.max_priority(), data_dict)
+                    self.memory.add(self.memory.max(), data_dict)
 
                 if self.memory.get_size() > 100:
                     states, rewards, actions, next_states, dones, priorities, idxes = self.memory.sample(self.load_size)
@@ -74,7 +76,7 @@ class DQNPER(DQN):
             self.reward_buffer.append(sum_reward)
 
             self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * episode)
-            if episode % 200 == 0 and episode != 0:
+            if episode % 100 == 0 and episode != 0:
                 self.target.load_state_dict(self.eval.state_dict())
 
             if episode % 1000 == 0 and episode != 0:
