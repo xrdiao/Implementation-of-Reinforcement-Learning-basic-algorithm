@@ -13,7 +13,7 @@ class DDQN(DQN):
         self.switch = False
 
     def choose_action(self, state_, epsilon_):
-        state_ = torch.tensor(state_, dtype=torch.float).view(1,-1)
+        state_ = torch.tensor(state_, dtype=torch.float).view(1,-1).to(self.device)
         if np.random.uniform(0, 1) > epsilon_:
             if self.switch:
                 return torch.argmax(self.target(state_)).item()

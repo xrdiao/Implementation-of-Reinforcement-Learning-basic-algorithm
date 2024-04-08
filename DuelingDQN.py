@@ -14,11 +14,7 @@ class QNetwork(nn.Module):
         self.advantage = nn.Linear(hidden_size2, action_size)
         self.value = nn.Linear(hidden_size2, 1)
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     def forward(self, x):
-        if not isinstance(x, torch.Tensor):
-            x = torch.tensor(x, dtype=torch.float).to(self.device)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         advantages = self.advantage(x)
@@ -33,7 +29,7 @@ class DuelingDQN(DQN):
         self.name = 'DuelingDQN'
 
         # 训练的方法没有问题，如果不收敛，问题应该出在模型或者学习率上，大概率是后者（调参），其render结果和DQN的不太一样
-        self.target = QNetwork(self.action_size, self.state_size, self.hidden_size*2, self.hidden_size)
-        self.eval = QNetwork(self.action_size, self.state_size, self.hidden_size*2, self.hidden_size)
+        self.target = QNetwork(self.action_size, self.state_size, self.hidden_size*2, self.hidden_size).to(self.device)
+        self.eval = QNetwork(self.action_size, self.state_size, self.hidden_size*2, self.hidden_size).to(self.device)
         self.optimizer = optim.Adam(self.eval.parameters(), lr=0.001)
 

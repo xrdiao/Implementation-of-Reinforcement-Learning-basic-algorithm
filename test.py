@@ -49,17 +49,17 @@ if __name__ == '__main__':
     # test(QLearning, 'Taxi-v3')
     # test(Sarsa, 'Taxi-v3')
     # test(DQN, 'CartPole-v1')
-    test(DQNPER, 'CartPole-v1')
+    # test(DQNPER, 'CartPole-v1')
     # test(DDQN, 'CartPole-v1')
     # test(DuelingDQN, 'CartPole-v1')
     # test(PolicyGradient, env_name='CartPole-v1')
     # test(PPO, 'CartPole-v1')
     # test(PPOClip, 'CartPole-v1')
-    # test(PPOContinuous, 'Pendulum-v0')
+    test(PPOContinuous, 'Pendulum-v0')
     # test(PPOContinuous, 'MountainCarContinuous-v0')
     # test(DDPG, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')
 
-    # g = [0.99, 0.7, 0.5]
-    # a = [0.9, 0.7, 0.5]
-    # multi_test(learn_methods=[DQN, DQN, DQN], env_name='CartPole-v1', gammas=g, alphas=a)
+    # g = [0.99, 0.99, 0.5]
+    # a = [0.9, 0.9, 0.5]
+    # multi_test(learn_methods=[DQN, DQNPER], env_name='CartPole-v1', gammas=g, alphas=a)

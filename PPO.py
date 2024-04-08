@@ -39,7 +39,7 @@ class PPO(PolicyGradient):
             KL_div = torch.sum(old_probs[i] * torch.log(old_probs[i] / new_probs[i]))
             KL_divs.append(KL_div)
         KL_divs = torch.tensor(KL_divs, dtype=torch.float).view(-1, 1)
-        return torch.mean(KL_divs)
+        return torch.mean(KL_divs).to(self.device)
 
     def cal_advantages(self, deltas):
         advantage = 0
@@ -49,7 +49,7 @@ class PPO(PolicyGradient):
             advantage = self.gamma * self.lmbda * advantage + delta
             advantages.append(advantage)
         advantages.reverse()
-        advantages = torch.tensor(advantages, dtype=torch.float).view(-1, 1)
+        advantages = torch.tensor(advantages, dtype=torch.float).view(-1, 1).to(self.device)
         return advantages
 
     def update(self):
@@ -78,7 +78,7 @@ class PPO(PolicyGradient):
                 # 不收敛的问题要么在这，要么是参数设置
                 # KL = F.kl_div(torch.log(old_prob), new_prob, reduction='batchmean')  # 调用这个函数容易让反向传播失效
                 KL_div = self.KL_divergence(old_prob, new_prob)
-                ratios = torch.exp(log_new_prob - log_old_prob.detach())
+                ratios = torch.exp(log_new_prob - log_old_prob.detach()).to(self.device)
                 loss_actor = -torch.mean(ratios * advantages.detach()) + self.lmbda * KL_div
 
                 # 谁能想到问题是optimizer没有归零（之前错在optimizer.zero_grad，应该是optimizer_actor.zero_grad）

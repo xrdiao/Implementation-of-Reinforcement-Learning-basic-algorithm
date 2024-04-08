@@ -90,7 +90,7 @@ class PolicyGradient(DQN):
 
         # PG的训练是通过一条条完整的路径，所以先收集数据再训练，与DQN不同
         for episode in range(episodes_):
-            trajectory_dict = self.explore_trajectory(episodes_)
+            trajectory_dict, rewards = self.explore_trajectory(episodes_)
 
             # 可以通过memory记录轨迹，然后用重要性方法转换概率，但这里主要是简要实现，memory留到PPO解决
             loss_sum = self.learn(trajectory_dict['states'], trajectory_dict['actions'], trajectory_dict['rewards'],

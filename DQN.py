@@ -86,7 +86,7 @@ class DQN:
         return loss.item()
 
     def choose_action(self, state_, epsilon_):
-        state_ = torch.tensor(state_, dtype=torch.float).view(1, -1)
+        state_ = torch.tensor(state_, dtype=torch.float).view(1, -1).to(self.device)
         if np.random.uniform(0, 1) > epsilon_:
             return torch.argmax(self.eval(state_)).item()
         return self.env.action_space.sample()
@@ -139,18 +139,17 @@ class DQN:
                                                                             sum(rewards_set) / len(rewards_set)))
 
     def plot_reward_loss(self, addition=''):
-        reward_path = 'figs/' + self.name + '_reward' + addition + '.png'
-        loss_path = 'figs/' + self.name + '_loss' + addition + '.png'
+        fig_path = 'figs/' + self.name + addition + '.png'
 
-        plt.clf(), plt.cla()
-        plt.plot(self.reward_buffer)
-        plt.xlabel('episode number'), plt.ylabel('reward')
-        plt.savefig(reward_path, dpi=300)
+        fig, ax = plt.subplots(2, 1)
+        ax[0].plot(self.reward_buffer)
+        ax[0].set_title('rewards')
+        ax[0].set_xlabel('episodes')
+        ax[1].plot(self.loss_buffer)
+        ax[1].set_title('losses')
+        ax[1].set_xlabel('episodes')
 
-        plt.clf(), plt.cla()
-        plt.plot(self.loss_buffer)
-        plt.xlabel('episode number'), plt.ylabel('loss')
-        plt.savefig(loss_path, dpi=300)
+        plt.savefig(fig_path, dpi=300)
 
     def test(self, episodes, render=False):
         self.load_model()

@@ -64,7 +64,6 @@ class SumTree:
 
     def sample_uniform(self, batch_size):
         samples = random.sample(self.data[:self.size], batch_size)
-        # *transitions代表取出列表中的值，解压
         state, action, reward, next_state, done = zip(*samples)
         return np.array(state), action, reward, np.array(next_state), done, [], []
 

@@ -1,3 +1,5 @@
+from collections import deque
+
 from DQN import DQN
 import numpy as np
 import torch
@@ -32,7 +34,7 @@ class DQNPER(DQN):
         self.optimizer.zero_grad()
 
         delta = target - value
-        self.memory.node_num[idxes] = np.abs(delta.squeeze().detach().numpy())
+        self.memory.node_num[idxes] = np.abs(delta.squeeze().detach().cpu().numpy())
         self.memory.update()
 
         # tot_loss = 0
@@ -51,6 +53,8 @@ class DQNPER(DQN):
     def train(self, episodes_, pretrain=False):
         if pretrain:
             self.load_model()
+        max_reward = -100000000
+        rewards_set = deque(maxlen=1000)
 
         for episode in range(episodes_):
             state = self.env.reset()
@@ -78,14 +82,17 @@ class DQNPER(DQN):
                 if done:
                     break
             self.reward_buffer.append(sum_reward)
+            self.loss_buffer.append(loss_sum)
+            rewards_set.append(sum_reward)
 
             self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * episode)
             if episode % 100 == 0 and episode != 0:
                 self.target.load_state_dict(self.eval.state_dict())
 
+            if max_reward < sum_reward:
+                max_reward = sum_reward
+                torch.save(self.eval.state_dict(), self.get_path())
+
             if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, loss: {}, reward:{}".format(episode, self.epsilon, loss_sum,
-                                                                            sum(self.reward_buffer) / len(
-                                                                                self.reward_buffer)))
-                torch.save(self.eval.state_dict(), self.get_path())
-                self.reward_buffer.clear()
+                                                                            sum(rewards_set) / len(rewards_set)))
