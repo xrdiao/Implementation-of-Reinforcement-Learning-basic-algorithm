@@ -1,3 +1,6 @@
+import random
+from collections import deque
+
 import numpy as np
 import sys
 
@@ -11,8 +14,8 @@ class SumTree:
         self.idx = 0
         self.size = 0
 
-    def add(self, v, *parms):
-        data = [parm for parm in parms]
+    def add(self, v, *params):
+        data = [parm for parm in params]
 
         if self.idx > self.capacity - 1:
             self.idx = 0
@@ -48,17 +51,22 @@ class SumTree:
         for b in range(batch_size):
             sample_num = np.random.uniform(b * interval, (b + 1) * interval)
             priority, data, idx = self.get(sample_num)
-            data = data[0]
 
-            states.append(data['state'])
-            rewards.append(data['reward'])
-            actions.append(data['action'])
-            next_states.append(data['next_state'])
-            dones.append(data['done'])
+            states.append(data[0])
+            rewards.append(data[1])
+            actions.append(data[2])
+            next_states.append(data[3])
+            dones.append(data[4])
             priorities.append(priority)
             idxes.append(idx)
 
-        return states, rewards, actions, next_states, dones, priorities, idxes
+        return np.array(states), rewards, actions, np.array(next_states), dones, priorities, idxes
+
+    def sample_uniform(self, batch_size):
+        samples = random.sample(self.data[:self.size], batch_size)
+        # *transitions代表取出列表中的值，解压
+        state, action, reward, next_state, done = zip(*samples)
+        return np.array(state), action, reward, np.array(next_state), done, [], []
 
     def max(self):
         priority = self.node_num[self.capacity - 1:]
@@ -80,9 +88,6 @@ class SumTree:
             else:
                 self.node_num[0] = self.node_num[1] + self.node_num[2]
                 break
-
-    def get_size(self):
-        return self.size
 
 
 if __name__ == '__main__':

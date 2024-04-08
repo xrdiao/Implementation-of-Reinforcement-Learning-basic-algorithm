@@ -127,7 +127,7 @@ class DQN:
             rewards_set.append(sum_reward)
 
             self.epsilon = self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(-self.decay_rate * episode)
-            if episode % 200 == 0 and episode != 0:
+            if episode % 100 == 0 and episode != 0:
                 self.target.load_state_dict(self.eval.state_dict())
 
             if max_reward < sum_reward:

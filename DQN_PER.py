@@ -12,8 +12,8 @@ class DQNPER(DQN):
 
     def __init__(self, env_, gamma_, alpha_, explosion_step_, epsilon_):
         super(DQNPER, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
-        self.memory = SumTree(capacity=512)
-        self.beta = 0.01
+        self.memory = SumTree(capacity=1024)
+        self.beta = 0.2
         self.beta_increment_per_sampling = 0.01
         self.name = 'DQNPER'
 
@@ -21,27 +21,32 @@ class DQNPER(DQN):
         state_, action_, reward_, next_state_, dones_ = self.numpy2tensor(state_, action_, reward_, next_state_, dones_)
         priorities = torch.tensor(priorities, dtype=torch.float).to(self.device)
 
-        min_priority = self.memory.min() if self.memory.max() else 0.001
-        ISWeights = np.power(priorities / min_priority, -self.beta)
+        min_priority = self.memory.min() if self.memory.min() else 1
+        ISWeights = torch.pow(priorities / min_priority, -self.beta)
         self.beta = min(1.0, self.beta + self.beta_increment_per_sampling)
 
         value = self.eval(state_).gather(1, action_)
         next_value, _ = torch.max(self.target(next_state_), dim=1)
         target = reward_ + self.gamma * next_value.view(-1, 1).detach() * (1 - dones_)
-        delta = target - value
 
-        tot_loss = 0
         self.optimizer.zero_grad()
-        for i in range(len(ISWeights)):
-            self.memory.node_num[idxes[i]] = np.abs(delta[i].detach().numpy())
-            loss = (ISWeights[i] * delta.detach()[i] * self.eval(state_[i])[action_[i]]).to(self.device)
-            loss.backward()
-            tot_loss += loss.item()
 
-        self.optimizer.step()
+        delta = target - value
+        self.memory.node_num[idxes] = np.abs(delta.squeeze().detach().numpy())
         self.memory.update()
 
-        return tot_loss
+        # tot_loss = 0
+        # for i in range(len(ISWeights)):
+        #     self.memory.node_num[idxes[i]] = np.abs(delta[i].detach().numpy())
+        #     loss = (ISWeights[i] * delta.detach()[i] * self.eval(state_[i])[action_[i]]).to(self.device)
+        #     loss.backward()
+        #     tot_loss += loss.item()
+
+        loss = torch.mean(ISWeights * F.mse_loss(target, value)).to(self.device)
+        loss.backward()
+        self.optimizer.step()
+
+        return loss.item()
 
     def train(self, episodes_, pretrain=False):
         if pretrain:
@@ -57,14 +62,13 @@ class DQNPER(DQN):
                 action = self.choose_action(state, self.epsilon)
                 next_state, reward, done, info = self.env.step(action)
 
-                data_dict = {'state': state, 'action': int(action), 'reward': reward, 'next_state': next_state,
-                             'done': done}
                 if t == 0:
-                    self.memory.add(1, data_dict)
+                    self.memory.add(1, state, int(action), reward, next_state, done)
                 else:
-                    self.memory.add(self.memory.max(), data_dict)
+                    self.memory.add(self.memory.max(), state, int(action), reward, next_state, done)
+                t += 1
 
-                if self.memory.get_size() > 100:
+                if self.memory.size > 200:
                     states, rewards, actions, next_states, dones, priorities, idxes = self.memory.sample(self.load_size)
                     loss_sum = loss_sum + self.update(states, rewards, actions, next_states, dones, priorities, idxes)
 

@@ -46,9 +46,10 @@ def multi_test(learn_methods, env_name, gammas, alphas, episodes=5000, explosion
 
 
 if __name__ == '__main__':
-    test(QLearning, 'Taxi-v3')
+    # test(QLearning, 'Taxi-v3')
     # test(Sarsa, 'Taxi-v3')
     # test(DQN, 'CartPole-v1')
+    test(DQNPER, 'CartPole-v1')
     # test(DDQN, 'CartPole-v1')
     # test(DuelingDQN, 'CartPole-v1')
     # test(PolicyGradient, env_name='CartPole-v1')
@@ -58,8 +59,7 @@ if __name__ == '__main__':
     # test(PPOContinuous, 'MountainCarContinuous-v0')
     # test(DDPG, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')
-    # test(DQNPER, 'CartPole-v1')
 
-    g = [0.99, 0.7, 0.5]
-    a = [0.9, 0.7, 0.5]
-    multi_test(learn_methods=[DQN, DQN, DQN], env_name='CartPole-v1', gammas=g, alphas=a)
+    # g = [0.99, 0.7, 0.5]
+    # a = [0.9, 0.7, 0.5]
+    # multi_test(learn_methods=[DQN, DQN, DQN], env_name='CartPole-v1', gammas=g, alphas=a)
