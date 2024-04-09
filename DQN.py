@@ -141,7 +141,7 @@ class DQN:
     def plot_reward_loss(self, addition=''):
         fig_path = 'figs/' + self.name + addition + '.png'
 
-        fig, ax = plt.subplots(2, 1)
+        fig, ax = plt.subplots(2, 1, figsize=(40, 20))
         ax[0].plot(self.reward_buffer)
         ax[0].set_title('rewards')
         ax[0].set_xlabel('episodes')

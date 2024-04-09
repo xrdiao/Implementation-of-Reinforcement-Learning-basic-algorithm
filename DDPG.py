@@ -79,7 +79,7 @@ class DDPG(DQN):
         self.name = 'DDPG'
 
     def choose_action(self, state_, epsilon_):
-        state_ = torch.tensor(state_, dtype=torch.float).view(1, -1)
+        state_ = torch.tensor(state_, dtype=torch.float).view(1, -1).to(self.device)
         action = self.actor_target(state_)
         if epsilon_ == 0:
             return [action.item()]

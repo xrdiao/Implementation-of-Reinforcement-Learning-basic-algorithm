@@ -17,7 +17,7 @@ from PPO_continuous import PPOContinuous
 from DQN_PER import DQNPER
 
 
-def test(learn_method, env_name, addition='', episodes=10000, gamma=0.99, explosion_step=100,
+def test(learn_method, env_name, addition='', episodes=5000, gamma=0.99, explosion_step=100,
          alpha=0.7, epsilon=1, render=True, pretrain=False):
     env = gym.make(env_name)
     agent = learn_method(env, gamma, alpha, explosion_step, epsilon)
@@ -28,7 +28,7 @@ def test(learn_method, env_name, addition='', episodes=10000, gamma=0.99, explos
     agent.plot_reward_loss(addition)
 
 
-def multi_test(learn_methods, env_name, gammas, alphas, episodes=5000, explosion_step=100):
+def multi_test(learn_methods, env_name, gammas, alphas, episodes=100, explosion_step=100):
     processes = []
     test_num = len(learn_methods)
     for i in range(test_num):
@@ -55,11 +55,12 @@ if __name__ == '__main__':
     # test(PolicyGradient, env_name='CartPole-v1')
     # test(PPO, 'CartPole-v1')
     # test(PPOClip, 'CartPole-v1')
-    test(PPOContinuous, 'Pendulum-v0')
+    # test(PPOContinuous, 'Pendulum-v0')
     # test(PPOContinuous, 'MountainCarContinuous-v0')
     # test(DDPG, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')
 
-    # g = [0.99, 0.99, 0.5]
-    # a = [0.9, 0.9, 0.5]
-    # multi_test(learn_methods=[DQN, DQNPER], env_name='CartPole-v1', gammas=g, alphas=a)
+    a = [0.99, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    g = [0.99] * len(a)
+    agents = [DDQN for _ in range(2)]
+    multi_test(learn_methods=agents, env_name='CartPole-v1', gammas=g, alphas=a)
