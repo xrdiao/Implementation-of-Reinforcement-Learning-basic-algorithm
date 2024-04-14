@@ -110,6 +110,7 @@ class DDPG(DQN):
         actor_loss = - torch.mean(self.critic(states, action_)).to(self.device)
         actor_loss.backward()
         self.optimizer_actor.step()
+        return critic_loss
 
     def train(self, episodes_, pretrain=False):
         # 和DQN的训练是一样的
@@ -120,6 +121,7 @@ class DDPG(DQN):
             state = self.env.reset()
             sum_reward = 0
             max_reward = -10000000
+            loss = 0
 
             while True:
                 action = self.choose_action(state, self.epsilon)
@@ -129,7 +131,7 @@ class DDPG(DQN):
 
                 if self.memory.size() > 200:
                     states, rewards, actions, next_states, dones = self.memory.sample(self.load_size)
-                    self.learn(states, rewards, actions, next_states, dones)
+                    loss = self.learn(states, rewards, actions, next_states, dones)
 
                 state = next_state
                 sum_reward = sum_reward + reward
@@ -137,6 +139,7 @@ class DDPG(DQN):
                 if done:
                     break
             self.reward_buffer.append(sum_reward)
+            self.loss_buffer.append(loss)
 
             if max_reward < sum_reward:
                 torch.save(self.critic.state_dict(), self.get_path('_critic'))
@@ -146,6 +149,5 @@ class DDPG(DQN):
                 self.critic_target.load_state_dict(self.critic.state_dict())
                 self.actor_target.load_state_dict(self.actor.state_dict())
 
-            if episode % 1000 == 0:
-                print("Episode {}, reward:{}".format(episode, sum(self.reward_buffer) / len(self.reward_buffer)))
-                self.reward_buffer.clear()
+            # if episode % 1000 == 0:
+            #     print("Episode {}, reward:{}".format(episode, sum(self.reward_buffer) / len(self.reward_buffer)))

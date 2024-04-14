@@ -139,7 +139,7 @@ class DQN:
                                                                             sum(rewards_set) / len(rewards_set)))
 
     def plot_reward_loss(self, addition=''):
-        fig_path = 'figs/' + self.name + addition + '.png'
+        fig_path = './figs/' + self.name + addition + '.png'
 
         fig, ax = plt.subplots(2, 1, figsize=(40, 20))
         ax[0].plot(self.reward_buffer)
@@ -150,6 +150,18 @@ class DQN:
         ax[1].set_xlabel('episodes')
 
         plt.savefig(fig_path, dpi=300)
+        rewards = [reward for reward in self.reward_buffer]
+        losses = [loss for loss in self.loss_buffer]
+
+        reward_path = './data/' + self.name + '_rewards' + addition
+        loss_path = './data/' + self.name + '_losses' + addition
+        np.save(reward_path, rewards)
+        np.save(loss_path, losses)
+
+    def get_data(self):
+        rewards = [reward for reward in self.reward_buffer]
+        loss = [loss for loss in self.loss_buffer]
+        return np.array(rewards), np.array(loss)
 
     def test(self, episodes, render=False):
         self.load_model()

@@ -29,7 +29,8 @@ class PPO(PolicyGradient):
         self.critic = Critic(self.state_size, self.hidden_size).to(self.device)
         self.optimizer_critic = optim.Adam(self.critic.parameters(), lr=1e-3)
         self.memory = deque(maxlen=50)
-        self.lmbda = 0.95
+        # 用alpha来代替lambda的输入
+        self.lmbda = alpha_
 
         self.name = 'PPO'
 
@@ -108,12 +109,13 @@ class PPO(PolicyGradient):
             self.load_model()
 
         max_reward = -10000000
+        rewards = 0
 
         for episode in range(episodes_):
-            trajectory_dict, rewards = self.explore_trajectory(step)
-            self.memory.append(trajectory_dict)
-            self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
-
+            for _ in range(3):
+                trajectory_dict, rewards = self.explore_trajectory(step)
+                self.memory.append(trajectory_dict)
+            self.reward_buffer.append(rewards)
             self.update()
             self.memory.clear()
 
@@ -122,8 +124,6 @@ class PPO(PolicyGradient):
                 torch.save(self.critic.state_dict(), self.get_path('_critic'))
                 torch.save(self.actor.state_dict(), self.get_path('_actor'))
 
-            if episode % 1000 == 0 and episode != 0:
+            if episode % 100 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
                     self.reward_buffer)))
-                self.reward_buffer.clear()
-

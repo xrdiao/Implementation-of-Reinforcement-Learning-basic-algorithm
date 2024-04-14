@@ -26,6 +26,7 @@ class PolicyGradient(DQN):
         super(PolicyGradient, self).__init__(env_, gamma_, alpha_, explosion_step_, epsilon_)
 
         # PG与DQN的区别在于任务的目标，DQN是逼近最优价值函数，PG是找到最多的奖励，其实可以不添加这三行，但为了可读性，还是加上了
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
         self.actor = Actor(self.action_size, self.state_size, self.hidden_size)
         self.optimizer_actor = optim.Adam(self.actor.parameters(), lr=0.001)  # 这里加一个weight_decay直接就不收敛了，是因为参数本来就不多。
         self.actor.to(self.device)
@@ -87,6 +88,7 @@ class PolicyGradient(DQN):
     def train(self, episodes_, pretrain=False):
         if pretrain:
             self.load_model()
+        max_reward = -10000000
 
         # PG的训练是通过一条条完整的路径，所以先收集数据再训练，与DQN不同
         for episode in range(episodes_):
@@ -97,9 +99,11 @@ class PolicyGradient(DQN):
                                   trajectory_dict['next_states'], trajectory_dict['dones'])
             self.reward_buffer.append(torch.sum(torch.tensor(trajectory_dict['rewards'])).item())
 
+            if max_reward < rewards:
+                max_reward = rewards
+                torch.save(self.actor.state_dict(), self.get_path('_actor'))
+
             if episode % 1000 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, loss: {}, reward:{}".format(episode, self.epsilon, loss_sum,
                                                                             sum(self.reward_buffer) / len(
                                                                                 self.reward_buffer)))
-                torch.save(self.actor.state_dict(), self.get_path())
-                self.reward_buffer.clear()
