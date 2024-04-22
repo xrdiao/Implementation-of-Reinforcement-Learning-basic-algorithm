@@ -55,6 +55,7 @@ class PPO(PolicyGradient):
 
     def update(self):
         # 本质是learn，只是因为没有input，所以和learn做一个区分
+        loss = 0
         for trajectory in self.memory:
             states, actions, rewards, next_states, dones = trajectory['states'], trajectory['actions'], trajectory[
                 'rewards'], trajectory['next_states'], trajectory['dones']
@@ -86,6 +87,7 @@ class PPO(PolicyGradient):
                 self.optimizer_actor.zero_grad()
                 loss_actor.backward()
                 self.optimizer_actor.step()
+                loss += loss_actor.item()
 
             for _ in range(10):
                 self.optimizer_critic.zero_grad()
@@ -99,6 +101,7 @@ class PPO(PolicyGradient):
                 self.lmbda = self.lmbda * 2
             elif KL_div < 0.01:
                 self.lmbda = self.lmbda / 2
+        return loss / 10
 
     def load_model(self, addition='_actor'):
         self.actor.load_state_dict(torch.load(self.get_path('_actor')))
@@ -115,15 +118,17 @@ class PPO(PolicyGradient):
             for _ in range(3):
                 trajectory_dict, rewards = self.explore_trajectory(step)
                 self.memory.append(trajectory_dict)
-            self.reward_buffer.append(rewards)
-            self.update()
+            loss = self.update()
             self.memory.clear()
+
+            self.reward_buffer.append(rewards)
+            self.loss_buffer.append(loss)
 
             if max_reward < rewards:
                 max_reward = rewards
                 torch.save(self.critic.state_dict(), self.get_path('_critic'))
                 torch.save(self.actor.state_dict(), self.get_path('_actor'))
 
-            if episode % 100 == 0 and episode != 0:
-                print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
-                    self.reward_buffer)))
+            # if episode % 100 == 0 and episode != 0:
+            #     print("Episode {}, epsilon: {}, reward:{}".format(episode, self.epsilon, sum(self.reward_buffer) / len(
+            #         self.reward_buffer)))

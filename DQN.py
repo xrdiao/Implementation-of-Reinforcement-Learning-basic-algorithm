@@ -41,7 +41,8 @@ class DQN:
         # hidden = 16
         self.eval = Model(self.action_size, self.state_size, self.hidden_size)
         self.target = Model(self.action_size, self.state_size, self.hidden_size)
-        self.optimizer = optim.Adam(self.eval.parameters(), lr=0.01)  # 这里加一个weight_decay直接就不收敛了，估计是因为参数本来就不多。
+        self.learning_rate = 0.01
+        self.optimizer = optim.Adam(self.eval.parameters(), lr=self.learning_rate)  # 这里加一个weight_decay直接就不收敛了，估计是因为参数本来就不多。
         self.memory = ReplayBuffer(1000)
 
         self.explosion_step = explosion_step_

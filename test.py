@@ -24,11 +24,13 @@ def test(learn_method, env_name, addition='', episodes=10000, gamma=0.99, explos
     rewards_set = None
     losses_set = None
     name = None
+    lr = 0
 
     for t in range(times):
         env = gym.make(env_name)
         agent = learn_method(env, gamma, alpha, explosion_step, epsilon)
         name = agent.name
+        lr = agent.learning_rate
 
         print('------------' + agent.name + ' {}'.format(t) + '--------------')
         agent.train(episodes, pretrain=pretrain)
@@ -44,12 +46,12 @@ def test(learn_method, env_name, addition='', episodes=10000, gamma=0.99, explos
     losses_set = losses_set / times
     rewards_set = rewards_set / times
 
-    reward_path = './data/' + name + '_rewards' + addition
-    loss_path = './data/' + name + '_losses' + addition
+    reward_path = './data/' + name + '_rewards' + addition + '{:.5f}'.format(lr)
+    loss_path = './data/' + name + '_losses' + addition + '{:.5f}'.format(lr)
     np.save(reward_path, rewards_set)
     np.save(loss_path, losses_set)
 
-    fig_path = './figs/' + name + addition + '.png'
+    fig_path = './figs/' + name + addition + '{:.5f}'.format(lr) + '.png'
     fig, ax = plt.subplots(2, 1, figsize=(40, 20))
     ax[0].plot(rewards_set)
     ax[0].set_title('rewards')
@@ -90,7 +92,7 @@ if __name__ == '__main__':
     # test(PPOClip, 'CartPole-v1')
     # test(PPOContinuous, 'Pendulum-v0')
     # test(PPOContinuous, 'MountainCarContinuous-v0')
-    # test(DDPG, 'Pendulum-v0')
+    test(DDPG, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')
 
     # 多线程
@@ -101,8 +103,8 @@ if __name__ == '__main__':
     # multi_test(learn_methods=agents, env_name='CartPole-v1', gammas=g, alphas=a)
     # agents = [DQN for _ in range(len(g))]
     # multi_test(learn_methods=agents, env_name='CartPole-v1', gammas=g, alphas=a)
-    agents = [DQNPER for _ in range(len(g))]
-    multi_test(learn_methods=agents, env_name='CartPole-v1', gammas=g, alphas=a)
+    # agents = [DQNPER for _ in range(len(g))]
+    # multi_test(learn_methods=agents, env_name='CartPole-v1', gammas=g, alphas=a)
     # agents = [DuelingDQN for _ in range(len(g))]
     # multi_test(learn_methods=agents, env_name='CartPole-v1', gammas=g, alphas=a)
 

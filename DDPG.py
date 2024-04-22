@@ -73,8 +73,9 @@ class DDPG(DQN):
         self.critic = Critic(self.action_size, self.state_size).to(self.device)
         self.critic_target = Critic(self.action_size, self.state_size).to(self.device)
 
-        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=2e-5)
-        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=2e-5)
+        self.learning_rate = 2e-5
+        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=self.learning_rate)
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=self.learning_rate)
 
         self.name = 'DDPG'
 

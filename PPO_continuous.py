@@ -65,10 +65,11 @@ class PPOContinuous(PPOClip):
         self.hidden_size = 64
         self.action_bound = self.env.action_space.high[0]
 
+        self.learning_rate = 2e-5
         self.actor = Actor(self.action_size, self.state_size, self.action_bound).to(self.device)
-        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=2e-5)
+        self.optimizer_actor = torch.optim.Adam(self.actor.parameters(), lr=self.learning_rate)
         self.critic = Critic(self.state_size).to(self.device)
-        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=2e-5)
+        self.optimizer_critic = torch.optim.Adam(self.critic.parameters(), lr=self.learning_rate)
 
         self.update_batch_size = 64
         self.entropy_coef = 0.5
@@ -88,6 +89,7 @@ class PPOContinuous(PPOClip):
         return [action]
 
     def update(self):
+        loss = 0
         self.entropy_coef = self.entropy_coef * self.entropy_decay
         states, actions, rewards, next_states, dones = None, None, None, None, None
         for trajectory in self.memory:
@@ -142,9 +144,11 @@ class PPOContinuous(PPOClip):
                 torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 40)
                 loss_actor.backward()
                 self.optimizer_actor.step()
+                loss += loss_actor.item()
 
                 self.optimizer_critic.zero_grad()
                 loss_critic = torch.mean(F.mse_loss(td_targets[index].detach(), self.critic(states[index]))).to(
                     self.device)
                 loss_critic.backward()
                 self.optimizer_critic.step()
+        return loss / 10
