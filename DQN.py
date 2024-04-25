@@ -81,7 +81,7 @@ class DQN:
         target = reward_ + self.gamma * next_value.view(-1, 1).detach() * (1 - dones_)
 
         self.optimizer.zero_grad()
-        loss = torch.mean(F.mse_loss(target, value)).to(self.device)
+        loss = torch.mean(F.mse_loss(target.detach(), value)).to(self.device)
         loss.backward()
         self.optimizer.step()
         return loss.item()
@@ -135,7 +135,7 @@ class DQN:
                 max_reward = sum_reward
                 torch.save(self.eval.state_dict(), self.get_path())
 
-            if episode % 1000 == 0 and episode != 0:
+            if episode % 100 == 0 and episode != 0:
                 print("Episode {}, epsilon: {}, loss: {}, reward:{}".format(episode, self.epsilon, loss_sum,
                                                                             sum(rewards_set) / len(rewards_set)))
 

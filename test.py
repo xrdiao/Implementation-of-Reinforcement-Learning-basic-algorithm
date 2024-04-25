@@ -17,9 +17,10 @@ from PPO_clip import PPOClip
 from DDPG import DDPG
 from PPO_continuous import PPOContinuous
 from DQN_PER import DQNPER
+from SAC import SAC
 
 
-def test(learn_method, env_name, addition='', episodes=10000, gamma=0.99, explosion_step=100,
+def test(learn_method, env_name, addition='', episodes=10000, gamma=0.9, explosion_step=100,
          alpha=0.7, epsilon=1, render=True, pretrain=False, times=1):
     rewards_set = None
     losses_set = None
@@ -92,8 +93,9 @@ if __name__ == '__main__':
     # test(PPOClip, 'CartPole-v1')
     # test(PPOContinuous, 'Pendulum-v0')
     # test(PPOContinuous, 'MountainCarContinuous-v0')
-    test(DDPG, 'Pendulum-v0')
+    # test(DDPG, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')
+    test(SAC, 'CartPole-v1')
 
     # 多线程
     g = np.linspace(0.8, 1, 10)
