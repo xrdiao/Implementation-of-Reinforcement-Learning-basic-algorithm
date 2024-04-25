@@ -18,6 +18,7 @@ from DDPG import DDPG
 from PPO_continuous import PPOContinuous
 from DQN_PER import DQNPER
 from SAC import SAC
+from SAC_continuous import SACContinuous
 
 
 def test(learn_method, env_name, addition='', episodes=10000, gamma=0.9, explosion_step=100,
@@ -96,6 +97,7 @@ if __name__ == '__main__':
     # test(DDPG, 'Pendulum-v0')
     # test(DDPG, 'MountainCarContinuous-v0')
     test(SAC, 'CartPole-v1')
+    # test(SACContinuous, 'Pendulum-v0')
 
     # 多线程
     g = np.linspace(0.8, 1, 10)
