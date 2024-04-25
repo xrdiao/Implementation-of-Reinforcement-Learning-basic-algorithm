@@ -29,9 +29,9 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         self.fc1 = nn.Sequential(
             nn.Linear(state_size, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 64),
-            nn.ReLU()
+            nn.Tanh()
         )
         self.fc_mu = nn.Linear(64, action_size)
         self.fc_mu.weight.data.mul_(0.1)
